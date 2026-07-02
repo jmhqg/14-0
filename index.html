@@ -1,0 +1,2771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>14-0</title>
+<style>
+  :root {
+    --bg: #f0f0f5; --surface: #ffffff; --text: #1a1a2e; --muted: #7a7a8e;
+    --accent: #2563eb; --green: #10b981; --red: #e74c3c; --gold: #f59e0b;
+    --orange: #f97316; --blue: #3b82f6; --purple: #8b5cf6; --border: #e2e2ea;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-tap-highlight-color: transparent; }
+  #app { max-width: 480px; margin: 0 auto; padding: 16px 16px 100px; }
+
+  header { text-align: center; margin-bottom: 14px; }
+  header h1 { font-size: 2rem; font-weight: 900; color: var(--accent); letter-spacing: -0.5px; }
+  header p { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+  .score-bar { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border-radius: 14px; padding: 10px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 12px; }
+  .score-section { text-align: center; min-width: 60px; }
+  .score-label { font-size: 0.6rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .score-value { font-size: 1.5rem; font-weight: 900; }
+  .score-value.good { color: var(--green); }
+  .score-value.ok { color: var(--gold); }
+  .score-value.bad { color: var(--red); }
+  .progress-dots { display: flex; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+  .dot.done { background: var(--accent); }
+  .dot.active { background: var(--gold); }
+
+  .feedback-bar { text-align: center; background: var(--surface); border-radius: 10px; padding: 10px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); font-size: 0.8rem; color: var(--muted); }
+  .feedback-bar .fb-rank { font-weight: 800; }
+
+  .country-card { background: var(--surface); border-radius: 18px; padding: 28px 20px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.06); margin-bottom: 12px; border: 2.5px solid var(--accent); transition: all 0.2s; }
+  .country-card.spinning { border-color: var(--gold); }
+  .country-card .flag { font-size: 52px; margin-bottom: 6px; transition: filter 0.1s; }
+  .country-card .flag img.emoji { width: 52px; height: 52px; vertical-align: middle; }
+  img.emoji { width: 1em; height: 1em; vertical-align: -0.1em; }
+  .country-card.spinning .flag { filter: blur(3px); }
+  .country-card .country-name { font-size: 1.3rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+  .country-card.spinning .country-name { filter: blur(1.5px); opacity: 0.7; }
+  .country-card .year-label { font-size: 1rem; font-weight: 800; color: var(--accent); margin-top: 2px; }
+  .country-card.spinning .year-label { filter: blur(2px); opacity: 0.7; }
+  .country-card .squad-count { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+
+  .pos-group { margin-bottom: 10px; }
+  .pos-header { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; padding-left: 6px; }
+  .pick-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface); border-radius: 10px; margin-bottom: 4px; cursor: pointer; border: 1.5px solid var(--border); transition: all 0.12s; }
+  .pick-row:active { transform: scale(0.98); }
+  .pick-row.disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+  .pick-row .pr-rating { font-weight: 800; font-size: 0.65rem; min-width: 28px; text-align: center; text-transform: uppercase; letter-spacing: 0.3px; }
+  .pick-row .pr-name { font-weight: 700; font-size: 0.82rem; flex: 1; }
+  .pick-row .pr-pos { font-size: 0.6rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; color: #fff; }
+
+  .slot-choice { background: var(--surface); border: 2px solid var(--accent); border-radius: 14px; padding: 16px; margin-bottom: 12px; text-align: center; }
+  .slot-choice-title { font-weight: 800; font-size: 0.85rem; color: var(--accent); margin-bottom: 10px; }
+  .slot-btns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  .slot-btn { padding: 9px 16px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface); font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.12s; }
+  .slot-btn:active { transform: scale(0.96); }
+
+  .respin-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 12px; border-radius: 14px; border: 2px dashed var(--accent); background: transparent; color: var(--accent); font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-bottom: 6px; transition: all 0.15s; }
+  .respin-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .respin-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .respin-row .respin-btn { flex: 1; margin-bottom: 0; }
+
+  .btn-primary { display: block; width: 100%; max-width: 320px; margin: 20px auto 0; padding: 14px; border-radius: 16px; border: none; background: var(--accent); color: #fff; font-size: 1rem; font-weight: 800; cursor: pointer; transition: transform 0.1s; }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-start { display: block; width: 100%; max-width: 320px; margin: 24px auto 0; padding: 16px; border-radius: 16px; border: none; background: var(--accent); color: #fff; font-size: 1.1rem; font-weight: 800; cursor: pointer; letter-spacing: 0.3px; }
+
+  .btn-restart { display: block; width: 100%; max-width: 320px; margin: 8px auto 0; padding: 12px; border-radius: 14px; border: 2px solid var(--border); background: transparent; color: var(--muted); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+
+  .btn-spin { display: block; width: 100%; max-width: 320px; margin: 12px auto; padding: 14px; border-radius: 16px; border: none; background: var(--accent); color: #fff; font-size: 1rem; font-weight: 800; cursor: pointer; }
+
+  .squad-slots { margin-top: 16px; }
+  .squad-slots .slots-title { font-size: 0.7rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding-left: 4px; }
+  .slot-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface); border-radius: 10px; margin-bottom: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  .slot-row.empty { opacity: 0.45; }
+  .slot-row .sr-emoji { font-size: 1.1rem; width: 24px; text-align: center; }
+  .slot-row .sr-label { font-size: 0.65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; min-width: 28px; }
+  .slot-row .sr-info { flex: 1; }
+  .slot-row .sr-name { font-weight: 700; font-size: 0.82rem; }
+  .slot-row .sr-meta { font-size: 0.65rem; color: var(--muted); }
+  .slot-row .sr-rating { font-weight: 800; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.3px; }
+
+  .final-screen { background: var(--surface); border-radius: 18px; padding: 28px 20px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.08); margin-top: 12px; }
+  .final-screen h2 { font-size: 1.4rem; }
+  .final-screen .final-emoji { font-size: 3.5rem; margin-bottom: 8px; }
+  .final-screen .final-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.6; margin-bottom: 16px; max-width: 320px; margin-left: auto; margin-right: auto; }
+
+  .promo-box { display: block; width: 100%; max-width: 320px; margin: 16px auto 0; padding: 14px; border-radius: 14px; background: var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; text-decoration: none; transition: all 0.15s; }
+  .promo-box:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+  .promo-box .promo-title { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+  .promo-box .promo-title span { color: #15803d; }
+
+  .how-to-play { background: var(--surface); border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px; }
+  .how-to-play h3 { color: var(--accent); margin-bottom: 10px; font-size: 0.95rem; }
+  .how-to-play ol { padding-left: 18px; color: var(--muted); font-size: 0.85rem; line-height: 1.7; }
+  .how-to-play strong { color: var(--text); }
+
+  .footer { text-align: center; padding: 20px 0; color: var(--muted); font-size: 0.75rem; }
+  .footer a { color: var(--accent); text-decoration: none; }
+
+  .loading { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+<script src="https://unpkg.com/twemoji@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="app"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+<div class="footer">Squad data from IPL history</div>
+<script>
+const DB_RAW = {
+"Chennai Super Kings":{
+"2008":[
+["Suresh Raina",82,"BAT"],
+["Matthew Hayden",85,"BAT"],
+["Michael Hussey",78,"BAT"],
+["S Badrinath",72,"BAT"],
+["Muttiah Muralitharan",84,"BWL"],
+["Lakshmipathy Balaji",74,"BWL"],
+["Manpreet Gony",70,"BWL"],
+["Shadab Jakati",65,"BWL"],
+["Andrew Flintoff",80,"AR"],
+["Albie Morkel",74,"AR"],
+["Jacob Oram",71,"AR"],
+["MS Dhoni",88,"KPR"],
+["Parthiv Patel",68,"KPR"]
+],
+"2009":[
+["Suresh Raina",83,"BAT"],
+["Matthew Hayden",83,"BAT"],
+["Murali Vijay",71,"BAT"],
+["S Badrinath",73,"BAT"],
+["Muttiah Muralitharan",85,"BWL"],
+["Ashish Nehra",76,"BWL"],
+["Manpreet Gony",68,"BWL"],
+["Shadab Jakati",66,"BWL"],
+["Andrew Flintoff",79,"AR"],
+["Albie Morkel",76,"AR"],
+["Jacob Oram",70,"AR"],
+["MS Dhoni",89,"KPR"],
+["Parthiv Patel",67,"KPR"]
+],
+"2010":[
+["Suresh Raina",86,"BAT"],
+["Murali Vijay",78,"BAT"],
+["Matthew Hayden",77,"BAT"],
+["S Badrinath",74,"BAT"],
+["Muttiah Muralitharan",84,"BWL"],
+["Doug Bollinger",80,"BWL"],
+["Ashish Nehra",75,"BWL"],
+["Shadab Jakati",67,"BWL"],
+["Dwayne Bravo",79,"AR"],
+["Albie Morkel",77,"AR"],
+["Subramaniam Badrinath",69,"AR"],
+["MS Dhoni",90,"KPR"],
+["Parthiv Patel",68,"KPR"]
+],
+"2011":[
+["Suresh Raina",87,"BAT"],
+["Murali Vijay",80,"BAT"],
+["Faf du Plessis",75,"BAT"],
+["S Badrinath",73,"BAT"],
+["Doug Bollinger",78,"BWL"],
+["Ashish Nehra",77,"BWL"],
+["Shadab Jakati",66,"BWL"],
+["R Ashwin",80,"BWL"],
+["Dwayne Bravo",82,"AR"],
+["Albie Morkel",76,"AR"],
+["Suresh Raina",69,"AR"],
+["MS Dhoni",91,"KPR"],
+["Parthiv Patel",66,"KPR"]
+],
+"2012":[
+["Suresh Raina",86,"BAT"],
+["Michael Hussey",85,"BAT"],
+["Faf du Plessis",78,"BAT"],
+["Murali Vijay",76,"BAT"],
+["R Ashwin",84,"BWL"],
+["Mohit Sharma",72,"BWL"],
+["Ben Hilfenhaus",73,"BWL"],
+["Shadab Jakati",65,"BWL"],
+["Dwayne Bravo",85,"AR"],
+["Ravindra Jadeja",81,"AR"],
+["Albie Morkel",74,"AR"],
+["MS Dhoni",90,"KPR"],
+["Wriddhiman Saha",68,"KPR"]
+],
+"2013":[
+["Suresh Raina",85,"BAT"],
+["Michael Hussey",86,"BAT"],
+["Faf du Plessis",80,"BAT"],
+["Murali Vijay",77,"BAT"],
+["R Ashwin",83,"BWL"],
+["Mohit Sharma",76,"BWL"],
+["Chris Morris",72,"BWL"],
+["Ben Hilfenhaus",70,"BWL"],
+["Dwayne Bravo",87,"AR"],
+["Ravindra Jadeja",83,"AR"],
+["Albie Morkel",72,"AR"],
+["MS Dhoni",91,"KPR"],
+["Wriddhiman Saha",67,"KPR"]
+],
+"2014":[
+["Suresh Raina",84,"BAT"],
+["Brendon McCullum",82,"BAT"],
+["Faf du Plessis",81,"BAT"],
+["Dwayne Smith",78,"BAT"],
+["R Ashwin",82,"BWL"],
+["Mohit Sharma",79,"BWL"],
+["Ishwar Pandey",66,"BWL"],
+["Pawan Negi",68,"BWL"],
+["Dwayne Bravo",86,"AR"],
+["Ravindra Jadeja",82,"AR"],
+["Chris Morris",73,"AR"],
+["MS Dhoni",89,"KPR"],
+["Wriddhiman Saha",66,"KPR"]
+],
+"2015":[
+["Suresh Raina",83,"BAT"],
+["Brendon McCullum",80,"BAT"],
+["Faf du Plessis",82,"BAT"],
+["Dwayne Smith",77,"BAT"],
+["R Ashwin",84,"BWL"],
+["Mohit Sharma",75,"BWL"],
+["Ashish Nehra",74,"BWL"],
+["Pawan Negi",69,"BWL"],
+["Dwayne Bravo",85,"AR"],
+["Ravindra Jadeja",83,"AR"],
+["Chris Morris",74,"AR"],
+["MS Dhoni",88,"KPR"],
+["Wriddhiman Saha",67,"KPR"]
+],
+"2016":[
+["Suresh Raina",81,"BAT"],
+["Brendon McCullum",78,"BAT"],
+["Faf du Plessis",80,"BAT"],
+["Dwayne Smith",74,"BAT"],
+["R Ashwin",82,"BWL"],
+["Mohit Sharma",73,"BWL"],
+["Ashish Nehra",73,"BWL"],
+["Pawan Negi",70,"BWL"],
+["Dwayne Bravo",83,"AR"],
+["Ravindra Jadeja",82,"AR"],
+["Chris Morris",75,"AR"],
+["MS Dhoni",87,"KPR"],
+["Wriddhiman Saha",66,"KPR"]
+],
+"2017":[
+["Suresh Raina",79,"BAT"],
+["Brendon McCullum",76,"BAT"],
+["Faf du Plessis",79,"BAT"],
+["Murali Vijay",73,"BAT"],
+["R Ashwin",80,"BWL"],
+["Mohit Sharma",71,"BWL"],
+["Ashish Nehra",72,"BWL"],
+["Pawan Negi",69,"BWL"],
+["Dwayne Bravo",82,"AR"],
+["Ravindra Jadeja",81,"AR"],
+["Chris Morris",74,"AR"],
+["MS Dhoni",86,"KPR"],
+["Dinesh Karthik",70,"KPR"]
+],
+"2018":[
+["Shane Watson",86,"BAT"],
+["Ambati Rayudu",84,"BAT"],
+["Suresh Raina",79,"BAT"],
+["Faf du Plessis",80,"BAT"],
+["Deepak Chahar",77,"BWL"],
+["Shardul Thakur",74,"BWL"],
+["Imran Tahir",81,"BWL"],
+["Lungi Ngidi",73,"BWL"],
+["Ravindra Jadeja",83,"AR"],
+["Dwayne Bravo",82,"AR"],
+["Sam Curran",72,"AR"],
+["MS Dhoni",89,"KPR"],
+["Robin Uthappa",70,"KPR"]
+],
+"2019":[
+["Shane Watson",83,"BAT"],
+["Ambati Rayudu",80,"BAT"],
+["Suresh Raina",77,"BAT"],
+["Faf du Plessis",82,"BAT"],
+["Deepak Chahar",80,"BWL"],
+["Imran Tahir",84,"BWL"],
+["Shardul Thakur",75,"BWL"],
+["Lungi Ngidi",72,"BWL"],
+["Ravindra Jadeja",84,"AR"],
+["Dwayne Bravo",81,"AR"],
+["Sam Curran",74,"AR"],
+["MS Dhoni",88,"KPR"],
+["Robin Uthappa",69,"KPR"]
+],
+"2020":[
+["Shane Watson",79,"BAT"],
+["Ambati Rayudu",78,"BAT"],
+["Ruturaj Gaikwad",72,"BAT"],
+["Faf du Plessis",83,"BAT"],
+["Deepak Chahar",78,"BWL"],
+["Sam Curran",77,"BWL"],
+["Shardul Thakur",74,"BWL"],
+["Lungi Ngidi",75,"BWL"],
+["Ravindra Jadeja",85,"AR"],
+["Dwayne Bravo",79,"AR"],
+["Mitchell Santner",71,"AR"],
+["MS Dhoni",83,"KPR"],
+["N Jagadeesan",64,"KPR"]
+],
+"2021":[
+["Ruturaj Gaikwad",84,"BAT"],
+["Faf du Plessis",86,"BAT"],
+["Ambati Rayudu",77,"BAT"],
+["Moeen Ali",80,"BAT"],
+["Deepak Chahar",82,"BWL"],
+["Shardul Thakur",78,"BWL"],
+["Josh Hazlewood",80,"BWL"],
+["Lungi Ngidi",73,"BWL"],
+["Ravindra Jadeja",87,"AR"],
+["Dwayne Bravo",79,"AR"],
+["Sam Curran",75,"AR"],
+["MS Dhoni",84,"KPR"],
+["Robin Uthappa",72,"KPR"]
+],
+"2022":[
+["Ruturaj Gaikwad",80,"BAT"],
+["Devon Conway",82,"BAT"],
+["Ambati Rayudu",74,"BAT"],
+["Moeen Ali",78,"BAT"],
+["Mukesh Choudhary",70,"BWL"],
+["Maheesh Theekshana",76,"BWL"],
+["Tushar Deshpande",71,"BWL"],
+["Simarjeet Singh",64,"BWL"],
+["Ravindra Jadeja",83,"AR"],
+["Dwayne Bravo",77,"AR"],
+["Shivam Dube",75,"AR"],
+["MS Dhoni",84,"KPR"],
+["N Jagadeesan",63,"KPR"]
+],
+"2023":[
+["Ruturaj Gaikwad",83,"BAT"],
+["Devon Conway",84,"BAT"],
+["Ajinkya Rahane",76,"BAT"],
+["Moeen Ali",77,"BAT"],
+["Matheesha Pathirana",82,"BWL"],
+["Tushar Deshpande",75,"BWL"],
+["Maheesh Theekshana",78,"BWL"],
+["Akash Singh",65,"BWL"],
+["Ravindra Jadeja",85,"AR"],
+["Shivam Dube",78,"AR"],
+["Mitchell Santner",73,"AR"],
+["MS Dhoni",83,"KPR"],
+["N Jagadeesan",63,"KPR"]
+],
+"2024":[
+["Ruturaj Gaikwad",85,"BAT"],
+["Rachin Ravindra",78,"BAT"],
+["Ajinkya Rahane",73,"BAT"],
+["Daryl Mitchell",76,"BAT"],
+["Matheesha Pathirana",84,"BWL"],
+["Tushar Deshpande",73,"BWL"],
+["Mustafizur Rahman",77,"BWL"],
+["Maheesh Theekshana",76,"BWL"],
+["Ravindra Jadeja",84,"AR"],
+["Shivam Dube",80,"AR"],
+["Moeen Ali",74,"AR"],
+["MS Dhoni",81,"KPR"],
+["Avanish Rao Aravelly",63,"KPR"]
+],
+"2025":[
+["Ruturaj Gaikwad",84,"BAT"],
+["Devon Conway",82,"BAT"],
+["Rachin Ravindra",80,"BAT"],
+["Rahul Tripathi",74,"BAT"],
+["Matheesha Pathirana",85,"BWL"],
+["Khaleel Ahmed",76,"BWL"],
+["Noor Ahmad",75,"BWL"],
+["Mukesh Choudhary",68,"BWL"],
+["Ravindra Jadeja",83,"AR"],
+["Shivam Dube",79,"AR"],
+["Sam Curran",77,"AR"],
+["MS Dhoni",79,"KPR"],
+["Devon Conway",70,"KPR"]
+],
+"2026":[
+["Ruturaj Gaikwad",85,"BAT"],
+["Devon Conway",83,"BAT"],
+["Rachin Ravindra",82,"BAT"],
+["Rahul Tripathi",75,"BAT"],
+["Matheesha Pathirana",86,"BWL"],
+["Khaleel Ahmed",77,"BWL"],
+["Noor Ahmad",77,"BWL"],
+["Mukesh Choudhary",69,"BWL"],
+["Ravindra Jadeja",82,"AR"],
+["Shivam Dube",79,"AR"],
+["Sam Curran",78,"AR"],
+["MS Dhoni",78,"KPR"],
+["N Jagadeesan",65,"KPR"]
+]
+},
+"Delhi Capitals":{
+"2008":[
+["Virender Sehwag",87,"BAT"],
+["AB de Villiers",82,"BAT"],
+["Shikhar Dhawan",68,"BAT"],
+["Tillakaratne Dilshan",80,"BAT"],
+["Daniel Vettori",79,"BWL"],
+["Amit Mishra",78,"BWL"],
+["Ashish Nehra",76,"BWL"],
+["Shoaib Akhtar",77,"BWL"],
+["Irfan Pathan",76,"AR"],
+["Paul Collingwood",72,"AR"],
+["Farveez Maharoof",68,"AR"],
+["Dinesh Karthik",75,"KPR"],
+["Naman Ojha",65,"KPR"]
+],
+"2009":[
+["Virender Sehwag",88,"BAT"],
+["AB de Villiers",84,"BAT"],
+["Tillakaratne Dilshan",82,"BAT"],
+["Shikhar Dhawan",70,"BAT"],
+["Daniel Vettori",80,"BWL"],
+["Amit Mishra",79,"BWL"],
+["Ashish Nehra",77,"BWL"],
+["Dirk Nannes",76,"BWL"],
+["Irfan Pathan",75,"AR"],
+["Paul Collingwood",71,"AR"],
+["James Hopes",69,"AR"],
+["Dinesh Karthik",76,"KPR"],
+["Naman Ojha",66,"KPR"]
+],
+"2010":[
+["Virender Sehwag",86,"BAT"],
+["David Warner",75,"BAT"],
+["Tillakaratne Dilshan",80,"BAT"],
+["Shikhar Dhawan",72,"BAT"],
+["Daniel Vettori",79,"BWL"],
+["Amit Mishra",80,"BWL"],
+["Ashish Nehra",76,"BWL"],
+["Dirk Nannes",77,"BWL"],
+["Irfan Pathan",74,"AR"],
+["Paul Collingwood",70,"AR"],
+["James Hopes",68,"AR"],
+["Dinesh Karthik",77,"KPR"],
+["Naman Ojha",67,"KPR"]
+],
+"2011":[
+["Virender Sehwag",85,"BAT"],
+["David Warner",79,"BAT"],
+["Naman Ojha",71,"BAT"],
+["AB de Villiers",83,"BAT"],
+["Daniel Vettori",78,"BWL"],
+["Amit Mishra",81,"BWL"],
+["Morne Morkel",80,"BWL"],
+["Umesh Yadav",74,"BWL"],
+["Irfan Pathan",76,"AR"],
+["Ross Taylor",74,"AR"],
+["James Hopes",69,"AR"],
+["AB de Villiers",81,"KPR"],
+["Naman Ojha",68,"KPR"]
+],
+"2012":[
+["Virender Sehwag",84,"BAT"],
+["David Warner",82,"BAT"],
+["Mahela Jayawardene",80,"BAT"],
+["Unmukt Chand",68,"BAT"],
+["Morne Morkel",81,"BWL"],
+["Amit Mishra",82,"BWL"],
+["Umesh Yadav",76,"BWL"],
+["Shahbaz Nadeem",69,"BWL"],
+["Irfan Pathan",74,"AR"],
+["Ross Taylor",73,"AR"],
+["Ben Rohrer",67,"AR"],
+["Naman Ojha",69,"KPR"],
+["Kedar Jadhav",66,"KPR"]
+],
+"2013":[
+["David Warner",84,"BAT"],
+["Virender Sehwag",81,"BAT"],
+["Mahela Jayawardene",79,"BAT"],
+["Unmukt Chand",70,"BAT"],
+["Morne Morkel",80,"BWL"],
+["Amit Mishra",83,"BWL"],
+["Umesh Yadav",77,"BWL"],
+["Shahbaz Nadeem",70,"BWL"],
+["Irfan Pathan",73,"AR"],
+["Ben Rohrer",68,"AR"],
+["Roelof van der Merwe",67,"AR"],
+["Naman Ojha",68,"KPR"],
+["Kedar Jadhav",67,"KPR"]
+],
+"2014":[
+["David Warner",86,"BAT"],
+["Quinton de Kock",78,"BAT"],
+["Kevin Pietersen",79,"BAT"],
+["Dinesh Karthik",76,"BAT"],
+["Amit Mishra",83,"BWL"],
+["Morne Morkel",79,"BWL"],
+["Imran Tahir",80,"BWL"],
+["Shahbaz Nadeem",70,"BWL"],
+["JP Duminy",78,"AR"],
+["Angelo Mathews",74,"AR"],
+["Murali Vijay",72,"AR"],
+["Quinton de Kock",76,"KPR"],
+["Dinesh Karthik",74,"KPR"]
+],
+"2015":[
+["David Warner",87,"BAT"],
+["Quinton de Kock",80,"BAT"],
+["Mayank Agarwal",73,"BAT"],
+["Shreyas Iyer",72,"BAT"],
+["Amit Mishra",84,"BWL"],
+["Imran Tahir",82,"BWL"],
+["Shahbaz Nadeem",69,"BWL"],
+["Nathan Coulter-Nile",74,"BWL"],
+["JP Duminy",79,"AR"],
+["Angelo Mathews",75,"AR"],
+["Carlos Brathwaite",71,"AR"],
+["Quinton de Kock",79,"KPR"],
+["Naman Ojha",66,"KPR"]
+],
+"2016":[
+["David Warner",88,"BAT"],
+["Quinton de Kock",82,"BAT"],
+["Sanju Samson",76,"BAT"],
+["Karun Nair",74,"BAT"],
+["Amit Mishra",82,"BWL"],
+["Imran Tahir",81,"BWL"],
+["Chris Morris",78,"BWL"],
+["Zaheer Khan",73,"BWL"],
+["JP Duminy",77,"AR"],
+["Carlos Brathwaite",73,"AR"],
+["Sam Billings",71,"AR"],
+["Quinton de Kock",80,"KPR"],
+["Rishabh Pant",68,"KPR"]
+],
+"2017":[
+["Shreyas Iyer",77,"BAT"],
+["Sanju Samson",78,"BAT"],
+["Karun Nair",74,"BAT"],
+["Marlon Samuels",70,"BAT"],
+["Amit Mishra",80,"BWL"],
+["Chris Morris",79,"BWL"],
+["Zaheer Khan",71,"BWL"],
+["Kagiso Rabada",77,"BWL"],
+["Corey Anderson",74,"AR"],
+["Angelo Mathews",72,"AR"],
+["Carlos Brathwaite",72,"AR"],
+["Rishabh Pant",76,"KPR"],
+["Sam Billings",70,"KPR"]
+],
+"2018":[
+["Shreyas Iyer",80,"BAT"],
+["Prithvi Shaw",73,"BAT"],
+["Colin Munro",74,"BAT"],
+["Abhishek Sharma",66,"BAT"],
+["Amit Mishra",78,"BWL"],
+["Trent Boult",80,"BWL"],
+["Harshal Patel",73,"BWL"],
+["Avesh Khan",68,"BWL"],
+["Glenn Maxwell",79,"AR"],
+["Vijay Shankar",72,"AR"],
+["Chris Morris",77,"AR"],
+["Rishabh Pant",82,"KPR"],
+["Colin Ingram",69,"KPR"]
+],
+"2019":[
+["Shreyas Iyer",82,"BAT"],
+["Shikhar Dhawan",84,"BAT"],
+["Prithvi Shaw",79,"BAT"],
+["Colin Ingram",73,"BAT"],
+["Kagiso Rabada",86,"BWL"],
+["Amit Mishra",77,"BWL"],
+["Ishant Sharma",73,"BWL"],
+["Sandeep Lamichhane",74,"BWL"],
+["Axar Patel",78,"AR"],
+["Chris Morris",76,"AR"],
+["Hanuma Vihari",68,"AR"],
+["Rishabh Pant",85,"KPR"],
+["Alex Carey",69,"KPR"]
+],
+"2020":[
+["Shreyas Iyer",81,"BAT"],
+["Shikhar Dhawan",86,"BAT"],
+["Prithvi Shaw",80,"BAT"],
+["Shimron Hetmyer",77,"BAT"],
+["Kagiso Rabada",89,"BWL"],
+["Anrich Nortje",85,"BWL"],
+["R Ashwin",80,"BWL"],
+["Avesh Khan",73,"BWL"],
+["Marcus Stoinis",82,"AR"],
+["Axar Patel",79,"AR"],
+["Daniel Sams",70,"AR"],
+["Rishabh Pant",86,"KPR"],
+["Alex Carey",68,"KPR"]
+],
+"2021":[
+["Shreyas Iyer",79,"BAT"],
+["Shikhar Dhawan",83,"BAT"],
+["Prithvi Shaw",82,"BAT"],
+["Shimron Hetmyer",78,"BAT"],
+["Kagiso Rabada",87,"BWL"],
+["Anrich Nortje",84,"BWL"],
+["R Ashwin",79,"BWL"],
+["Avesh Khan",78,"BWL"],
+["Marcus Stoinis",80,"AR"],
+["Axar Patel",81,"AR"],
+["Lalit Yadav",68,"AR"],
+["Rishabh Pant",87,"KPR"],
+["Alex Carey",69,"KPR"]
+],
+"2022":[
+["David Warner",83,"BAT"],
+["Prithvi Shaw",76,"BAT"],
+["Mitchell Marsh",77,"BAT"],
+["Rovman Powell",73,"BAT"],
+["Kuldeep Yadav",82,"BWL"],
+["Anrich Nortje",81,"BWL"],
+["Khaleel Ahmed",74,"BWL"],
+["Mustafizur Rahman",76,"BWL"],
+["Axar Patel",80,"AR"],
+["Lalit Yadav",70,"AR"],
+["Shardul Thakur",75,"AR"],
+["Rishabh Pant",84,"KPR"],
+["Sarfaraz Khan",68,"KPR"]
+],
+"2023":[
+["David Warner",82,"BAT"],
+["Prithvi Shaw",73,"BAT"],
+["Phil Salt",79,"BAT"],
+["Manish Pandey",70,"BAT"],
+["Kuldeep Yadav",84,"BWL"],
+["Anrich Nortje",80,"BWL"],
+["Khaleel Ahmed",75,"BWL"],
+["Ishant Sharma",68,"BWL"],
+["Axar Patel",81,"AR"],
+["Mitchell Marsh",78,"AR"],
+["Aman Khan",65,"AR"],
+["Rishabh Pant",83,"KPR"],
+["Abhishek Porel",66,"KPR"]
+],
+"2024":[
+["Jake Fraser-McGurk",80,"BAT"],
+["David Warner",79,"BAT"],
+["Tristan Stubbs",76,"BAT"],
+["Abishek Porel",70,"BAT"],
+["Kuldeep Yadav",86,"BWL"],
+["Anrich Nortje",82,"BWL"],
+["Khaleel Ahmed",76,"BWL"],
+["Ishant Sharma",67,"BWL"],
+["Axar Patel",82,"AR"],
+["Mitchell Marsh",81,"AR"],
+["Sumit Kumar",65,"AR"],
+["Rishabh Pant",86,"KPR"],
+["Abhishek Porel",68,"KPR"]
+],
+"2025":[
+["Jake Fraser-McGurk",82,"BAT"],
+["KL Rahul",84,"BAT"],
+["Tristan Stubbs",78,"BAT"],
+["Faf du Plessis",76,"BAT"],
+["Kuldeep Yadav",85,"BWL"],
+["Mitchell Starc",83,"BWL"],
+["Mukesh Kumar",74,"BWL"],
+["T Natarajan",76,"BWL"],
+["Axar Patel",83,"AR"],
+["Karun Nair",79,"AR"],
+["Ashutosh Sharma",68,"AR"],
+["KL Rahul",82,"KPR"],
+["Abhishek Porel",69,"KPR"]
+],
+"2026":[
+["Jake Fraser-McGurk",83,"BAT"],
+["KL Rahul",83,"BAT"],
+["Tristan Stubbs",79,"BAT"],
+["Faf du Plessis",74,"BAT"],
+["Kuldeep Yadav",86,"BWL"],
+["Mitchell Starc",82,"BWL"],
+["Mukesh Kumar",75,"BWL"],
+["T Natarajan",77,"BWL"],
+["Axar Patel",82,"AR"],
+["Karun Nair",80,"AR"],
+["Ashutosh Sharma",70,"AR"],
+["KL Rahul",83,"KPR"],
+["Abhishek Porel",70,"KPR"]
+]
+},
+"Gujarat Titans":{
+"2022":[
+["Shubman Gill",82,"BAT"],
+["Wriddhiman Saha",74,"BAT"],
+["David Miller",83,"BAT"],
+["Abhinav Manohar",69,"BAT"],
+["Mohammed Shami",87,"BWL"],
+["Rashid Khan",89,"BWL"],
+["Lockie Ferguson",80,"BWL"],
+["Alzarri Joseph",74,"BWL"],
+["Hardik Pandya",87,"AR"],
+["Rahul Tewatia",79,"AR"],
+["Vijay Shankar",71,"AR"],
+["Wriddhiman Saha",73,"KPR"],
+["Matthew Wade",72,"KPR"]
+],
+"2023":[
+["Shubman Gill",88,"BAT"],
+["Wriddhiman Saha",72,"BAT"],
+["David Miller",82,"BAT"],
+["B Sai Sudharsan",76,"BAT"],
+["Mohammed Shami",88,"BWL"],
+["Rashid Khan",89,"BWL"],
+["Noor Ahmad",73,"BWL"],
+["Alzarri Joseph",76,"BWL"],
+["Hardik Pandya",85,"AR"],
+["Rahul Tewatia",78,"AR"],
+["Vijay Shankar",70,"AR"],
+["Wriddhiman Saha",71,"KPR"],
+["Matthew Wade",73,"KPR"]
+],
+"2024":[
+["Shubman Gill",86,"BAT"],
+["B Sai Sudharsan",80,"BAT"],
+["David Miller",80,"BAT"],
+["Abhinav Manohar",70,"BAT"],
+["Rashid Khan",88,"BWL"],
+["Mohit Sharma",77,"BWL"],
+["Noor Ahmad",75,"BWL"],
+["Umesh Yadav",71,"BWL"],
+["Hardik Pandya",83,"AR"],
+["Rahul Tewatia",77,"AR"],
+["Vijay Shankar",69,"AR"],
+["Wriddhiman Saha",70,"KPR"],
+["Matthew Wade",72,"KPR"]
+],
+"2025":[
+["Shubman Gill",87,"BAT"],
+["Jos Buttler",84,"BAT"],
+["B Sai Sudharsan",82,"BAT"],
+["Shahrukh Khan",74,"BAT"],
+["Rashid Khan",89,"BWL"],
+["Kagiso Rabada",86,"BWL"],
+["Prasidh Krishna",78,"BWL"],
+["Gerald Coetzee",75,"BWL"],
+["Washington Sundar",77,"AR"],
+["Rahul Tewatia",78,"AR"],
+["Shahrukh Khan",72,"AR"],
+["Jos Buttler",83,"KPR"],
+["Sai Kishore",67,"KPR"]
+],
+"2026":[
+["Shubman Gill",88,"BAT"],
+["Jos Buttler",83,"BAT"],
+["B Sai Sudharsan",83,"BAT"],
+["Shahrukh Khan",75,"BAT"],
+["Rashid Khan",88,"BWL"],
+["Kagiso Rabada",87,"BWL"],
+["Prasidh Krishna",79,"BWL"],
+["Gerald Coetzee",76,"BWL"],
+["Washington Sundar",78,"AR"],
+["Rahul Tewatia",77,"AR"],
+["Shahrukh Khan",73,"AR"],
+["Jos Buttler",84,"KPR"],
+["Sai Kishore",68,"KPR"]
+]
+},
+"Kolkata Knight Riders":{
+"2008":[
+["Sourav Ganguly",80,"BAT"],
+["Brendon McCullum",84,"BAT"],
+["Ricky Ponting",79,"BAT"],
+["Chris Gayle",82,"BAT"],
+["Ajit Agarkar",74,"BWL"],
+["Ishant Sharma",72,"BWL"],
+["Umar Gul",76,"BWL"],
+["Laxmi Ratan Shukla",65,"BWL"],
+["Jacques Kallis",83,"AR"],
+["David Hussey",74,"AR"],
+["Laxmi Ratan Shukla",64,"AR"],
+["Brad Haddin",73,"KPR"],
+["Wriddhiman Saha",66,"KPR"]
+],
+"2009":[
+["Sourav Ganguly",78,"BAT"],
+["Brendon McCullum",80,"BAT"],
+["Chris Gayle",84,"BAT"],
+["David Hussey",75,"BAT"],
+["Ajit Agarkar",72,"BWL"],
+["Ishant Sharma",70,"BWL"],
+["Mashrafe Mortaza",73,"BWL"],
+["Laxmi Ratan Shukla",65,"BWL"],
+["Jacques Kallis",84,"AR"],
+["Shakib Al Hasan",77,"AR"],
+["Manoj Tiwary",71,"AR"],
+["Brad Haddin",72,"KPR"],
+["Wriddhiman Saha",67,"KPR"]
+],
+"2010":[
+["Sourav Ganguly",76,"BAT"],
+["Brendon McCullum",79,"BAT"],
+["Chris Gayle",85,"BAT"],
+["Manoj Tiwary",73,"BAT"],
+["Brett Lee",82,"BWL"],
+["Ishant Sharma",71,"BWL"],
+["Laxmi Ratan Shukla",66,"BWL"],
+["Ajantha Mendis",74,"BWL"],
+["Jacques Kallis",85,"AR"],
+["Shakib Al Hasan",79,"AR"],
+["Manoj Tiwary",70,"AR"],
+["Brad Haddin",73,"KPR"],
+["Wriddhiman Saha",67,"KPR"]
+],
+"2011":[
+["Gautam Gambhir",85,"BAT"],
+["Brendon McCullum",77,"BAT"],
+["Manoj Tiwary",75,"BAT"],
+["Jacques Kallis",82,"BAT"],
+["Brett Lee",83,"BWL"],
+["Laxmipathy Balaji",72,"BWL"],
+["Iqbal Abdulla",70,"BWL"],
+["Rajat Bhatia",68,"BWL"],
+["Jacques Kallis",83,"AR"],
+["Shakib Al Hasan",80,"AR"],
+["Manoj Tiwary",72,"AR"],
+["Brad Haddin",72,"KPR"],
+["Wriddhiman Saha",68,"KPR"]
+],
+"2012":[
+["Gautam Gambhir",87,"BAT"],
+["Jacques Kallis",82,"BAT"],
+["Manish Pandey",74,"BAT"],
+["Brendon McCullum",76,"BAT"],
+["Sunil Narine",88,"BWL"],
+["Brett Lee",81,"BWL"],
+["Laxmipathy Balaji",72,"BWL"],
+["Iqbal Abdulla",70,"BWL"],
+["Jacques Kallis",81,"AR"],
+["Shakib Al Hasan",80,"AR"],
+["Yusuf Pathan",79,"AR"],
+["Manvinder Bisla",77,"KPR"],
+["Wriddhiman Saha",67,"KPR"]
+],
+"2013":[
+["Gautam Gambhir",86,"BAT"],
+["Jacques Kallis",80,"BAT"],
+["Manish Pandey",75,"BAT"],
+["Ryan ten Doeschate",73,"BAT"],
+["Sunil Narine",89,"BWL"],
+["Brett Lee",79,"BWL"],
+["Morne Morkel",78,"BWL"],
+["Laxmipathy Balaji",70,"BWL"],
+["Andre Russell",78,"AR"],
+["Shakib Al Hasan",81,"AR"],
+["Yusuf Pathan",77,"AR"],
+["Manvinder Bisla",74,"KPR"],
+["Wriddhiman Saha",67,"KPR"]
+],
+"2014":[
+["Gautam Gambhir",85,"BAT"],
+["Robin Uthappa",86,"BAT"],
+["Manish Pandey",79,"BAT"],
+["Jacques Kallis",78,"BAT"],
+["Sunil Narine",91,"BWL"],
+["Morne Morkel",80,"BWL"],
+["Umesh Yadav",77,"BWL"],
+["Piyush Chawla",76,"BWL"],
+["Andre Russell",83,"AR"],
+["Shakib Al Hasan",80,"AR"],
+["Yusuf Pathan",78,"AR"],
+["Robin Uthappa",82,"KPR"],
+["Sheldon Jackson",65,"KPR"]
+],
+"2015":[
+["Gautam Gambhir",83,"BAT"],
+["Robin Uthappa",82,"BAT"],
+["Manish Pandey",78,"BAT"],
+["Chris Lynn",74,"BAT"],
+["Sunil Narine",88,"BWL"],
+["Morne Morkel",79,"BWL"],
+["Umesh Yadav",76,"BWL"],
+["Piyush Chawla",75,"BWL"],
+["Andre Russell",87,"AR"],
+["Shakib Al Hasan",78,"AR"],
+["Yusuf Pathan",75,"AR"],
+["Robin Uthappa",80,"KPR"],
+["Sheldon Jackson",65,"KPR"]
+],
+"2016":[
+["Gautam Gambhir",84,"BAT"],
+["Robin Uthappa",81,"BAT"],
+["Manish Pandey",80,"BAT"],
+["Chris Lynn",78,"BAT"],
+["Sunil Narine",87,"BWL"],
+["Morne Morkel",78,"BWL"],
+["Umesh Yadav",75,"BWL"],
+["Piyush Chawla",74,"BWL"],
+["Andre Russell",86,"AR"],
+["Shakib Al Hasan",79,"AR"],
+["Yusuf Pathan",74,"AR"],
+["Robin Uthappa",79,"KPR"],
+["Sheldon Jackson",66,"KPR"]
+],
+"2017":[
+["Gautam Gambhir",81,"BAT"],
+["Robin Uthappa",79,"BAT"],
+["Chris Lynn",80,"BAT"],
+["Manish Pandey",76,"BAT"],
+["Sunil Narine",86,"BWL"],
+["Umesh Yadav",77,"BWL"],
+["Kuldeep Yadav",76,"BWL"],
+["Nathan Coulter-Nile",74,"BWL"],
+["Andre Russell",84,"AR"],
+["Colin de Grandhomme",73,"AR"],
+["Piyush Chawla",72,"AR"],
+["Robin Uthappa",78,"KPR"],
+["Sheldon Jackson",65,"KPR"]
+],
+"2018":[
+["Robin Uthappa",78,"BAT"],
+["Chris Lynn",79,"BAT"],
+["Nitish Rana",77,"BAT"],
+["Shubman Gill",70,"BAT"],
+["Sunil Narine",85,"BWL"],
+["Kuldeep Yadav",80,"BWL"],
+["Prasidh Krishna",72,"BWL"],
+["Piyush Chawla",73,"BWL"],
+["Andre Russell",88,"AR"],
+["Dinesh Karthik",82,"AR"],
+["Shivam Mavi",68,"AR"],
+["Dinesh Karthik",80,"KPR"],
+["Robin Uthappa",74,"KPR"]
+],
+"2019":[
+["Shubman Gill",76,"BAT"],
+["Chris Lynn",77,"BAT"],
+["Nitish Rana",78,"BAT"],
+["Robin Uthappa",74,"BAT"],
+["Sunil Narine",84,"BWL"],
+["Kuldeep Yadav",78,"BWL"],
+["Prasidh Krishna",74,"BWL"],
+["Lockie Ferguson",76,"BWL"],
+["Andre Russell",90,"AR"],
+["Carlos Brathwaite",72,"AR"],
+["Piyush Chawla",71,"AR"],
+["Dinesh Karthik",81,"KPR"],
+["Robin Uthappa",73,"KPR"]
+],
+"2020":[
+["Shubman Gill",79,"BAT"],
+["Nitish Rana",77,"BAT"],
+["Rahul Tripathi",76,"BAT"],
+["Eoin Morgan",80,"BAT"],
+["Sunil Narine",83,"BWL"],
+["Pat Cummins",82,"BWL"],
+["Varun Chakravarthy",80,"BWL"],
+["Prasidh Krishna",73,"BWL"],
+["Andre Russell",85,"AR"],
+["Shakib Al Hasan",76,"AR"],
+["Ben Cutting",69,"AR"],
+["Dinesh Karthik",79,"KPR"],
+["Tim Seifert",65,"KPR"]
+],
+"2021":[
+["Shubman Gill",81,"BAT"],
+["Nitish Rana",79,"BAT"],
+["Rahul Tripathi",78,"BAT"],
+["Venkatesh Iyer",77,"BAT"],
+["Sunil Narine",84,"BWL"],
+["Varun Chakravarthy",82,"BWL"],
+["Lockie Ferguson",79,"BWL"],
+["Prasidh Krishna",75,"BWL"],
+["Andre Russell",86,"AR"],
+["Shakib Al Hasan",75,"AR"],
+["Venkatesh Iyer",74,"AR"],
+["Dinesh Karthik",80,"KPR"],
+["Sheldon Jackson",66,"KPR"]
+],
+"2022":[
+["Venkatesh Iyer",76,"BAT"],
+["Ajinkya Rahane",74,"BAT"],
+["Nitish Rana",77,"BAT"],
+["Shreyas Iyer",80,"BAT"],
+["Sunil Narine",83,"BWL"],
+["Varun Chakravarthy",78,"BWL"],
+["Umesh Yadav",74,"BWL"],
+["Tim Southee",76,"BWL"],
+["Andre Russell",84,"AR"],
+["Pat Cummins",80,"AR"],
+["Anukul Roy",65,"AR"],
+["Sheldon Jackson",68,"KPR"],
+["Sam Billings",72,"KPR"]
+],
+"2023":[
+["Venkatesh Iyer",77,"BAT"],
+["Rahmanullah Gurbaz",80,"BAT"],
+["Nitish Rana",76,"BAT"],
+["Jason Roy",73,"BAT"],
+["Sunil Narine",84,"BWL"],
+["Varun Chakravarthy",80,"BWL"],
+["Shardul Thakur",75,"BWL"],
+["Harshit Rana",71,"BWL"],
+["Andre Russell",85,"AR"],
+["Rinku Singh",79,"AR"],
+["Anukul Roy",66,"AR"],
+["Rahmanullah Gurbaz",78,"KPR"],
+["Narayan Jagadeesan",64,"KPR"]
+],
+"2024":[
+["Venkatesh Iyer",79,"BAT"],
+["Rahmanullah Gurbaz",84,"BAT"],
+["Angkrish Raghuvanshi",68,"BAT"],
+["Phil Salt",86,"BAT"],
+["Sunil Narine",87,"BWL"],
+["Varun Chakravarthy",85,"BWL"],
+["Mitchell Starc",84,"BWL"],
+["Harshit Rana",79,"BWL"],
+["Andre Russell",86,"AR"],
+["Rinku Singh",81,"AR"],
+["Ramandeep Singh",72,"AR"],
+["Phil Salt",85,"KPR"],
+["Rahmanullah Gurbaz",82,"KPR"]
+],
+"2025":[
+["Venkatesh Iyer",78,"BAT"],
+["Rahmanullah Gurbaz",83,"BAT"],
+["Angkrish Raghuvanshi",70,"BAT"],
+["Ajinkya Rahane",73,"BAT"],
+["Sunil Narine",86,"BWL"],
+["Varun Chakravarthy",86,"BWL"],
+["Anrich Nortje",82,"BWL"],
+["Harshit Rana",80,"BWL"],
+["Andre Russell",85,"AR"],
+["Rinku Singh",80,"AR"],
+["Ramandeep Singh",73,"AR"],
+["Quinton de Kock",84,"KPR"],
+["Rahmanullah Gurbaz",81,"KPR"]
+],
+"2026":[
+["Venkatesh Iyer",79,"BAT"],
+["Rahmanullah Gurbaz",84,"BAT"],
+["Angkrish Raghuvanshi",72,"BAT"],
+["Quinton de Kock",82,"BAT"],
+["Sunil Narine",85,"BWL"],
+["Varun Chakravarthy",87,"BWL"],
+["Anrich Nortje",83,"BWL"],
+["Harshit Rana",81,"BWL"],
+["Andre Russell",84,"AR"],
+["Rinku Singh",81,"AR"],
+["Ramandeep Singh",74,"AR"],
+["Quinton de Kock",83,"KPR"],
+["Rahmanullah Gurbaz",82,"KPR"]
+]
+},
+"Lucknow Super Giants":{
+"2022":[
+["KL Rahul",87,"BAT"],
+["Quinton de Kock",84,"BAT"],
+["Evin Lewis",76,"BAT"],
+["Ayush Badoni",74,"BAT"],
+["Avesh Khan",80,"BWL"],
+["Ravi Bishnoi",77,"BWL"],
+["Dushmantha Chameera",73,"BWL"],
+["Andrew Tye",72,"BWL"],
+["Marcus Stoinis",82,"AR"],
+["Krunal Pandya",77,"AR"],
+["Deepak Hooda",76,"AR"],
+["Quinton de Kock",83,"KPR"],
+["KL Rahul",85,"KPR"]
+],
+"2023":[
+["KL Rahul",86,"BAT"],
+["Quinton de Kock",85,"BAT"],
+["Kyle Mayers",74,"BAT"],
+["Ayush Badoni",76,"BAT"],
+["Mark Wood",83,"BWL"],
+["Ravi Bishnoi",78,"BWL"],
+["Avesh Khan",76,"BWL"],
+["Naveen-ul-Haq",77,"BWL"],
+["Marcus Stoinis",83,"AR"],
+["Krunal Pandya",76,"AR"],
+["Deepak Hooda",74,"AR"],
+["Quinton de Kock",84,"KPR"],
+["KL Rahul",84,"KPR"]
+],
+"2024":[
+["KL Rahul",84,"BAT"],
+["Quinton de Kock",83,"BAT"],
+["Devdutt Padikkal",77,"BAT"],
+["Ayush Badoni",77,"BAT"],
+["Ravi Bishnoi",79,"BWL"],
+["Mohsin Khan",74,"BWL"],
+["Yash Thakur",71,"BWL"],
+["Naveen-ul-Haq",75,"BWL"],
+["Marcus Stoinis",84,"AR"],
+["Krunal Pandya",77,"AR"],
+["Nicholas Pooran",80,"AR"],
+["Nicholas Pooran",82,"KPR"],
+["Quinton de Kock",81,"KPR"]
+],
+"2025":[
+["Rishabh Pant",87,"BAT"],
+["David Miller",80,"BAT"],
+["Aiden Markram",79,"BAT"],
+["Ayush Badoni",78,"BAT"],
+["Mitchell Starc",84,"BWL"],
+["Ravi Bishnoi",80,"BWL"],
+["Avesh Khan",76,"BWL"],
+["Shamar Joseph",75,"BWL"],
+["Nicholas Pooran",83,"AR"],
+["Krunal Pandya",76,"AR"],
+["Deepak Hooda",74,"AR"],
+["Rishabh Pant",86,"KPR"],
+["Nicholas Pooran",81,"KPR"]
+],
+"2026":[
+["Rishabh Pant",88,"BAT"],
+["David Miller",79,"BAT"],
+["Aiden Markram",80,"BAT"],
+["Ayush Badoni",79,"BAT"],
+["Mitchell Starc",83,"BWL"],
+["Ravi Bishnoi",81,"BWL"],
+["Avesh Khan",77,"BWL"],
+["Shamar Joseph",76,"BWL"],
+["Nicholas Pooran",84,"AR"],
+["Krunal Pandya",77,"AR"],
+["Deepak Hooda",75,"AR"],
+["Rishabh Pant",87,"KPR"],
+["Nicholas Pooran",82,"KPR"]
+]
+},
+"Mumbai Indians":{
+"2008":[
+["Sachin Tendulkar",87,"BAT"],
+["Sanath Jayasuriya",82,"BAT"],
+["Robin Uthappa",74,"BAT"],
+["Shikhar Dhawan",68,"BAT"],
+["Lasith Malinga",83,"BWL"],
+["Harbhajan Singh",80,"BWL"],
+["Zaheer Khan",81,"BWL"],
+["Dhawal Kulkarni",66,"BWL"],
+["Kieron Pollard",72,"AR"],
+["Abhishek Nayar",69,"AR"],
+["Saurabh Tiwary",67,"AR"],
+["Dinesh Karthik",75,"KPR"],
+["Parthiv Patel",68,"KPR"]
+],
+"2009":[
+["Sachin Tendulkar",88,"BAT"],
+["Sanath Jayasuriya",79,"BAT"],
+["Jean-Paul Duminy",77,"BAT"],
+["Shikhar Dhawan",70,"BAT"],
+["Lasith Malinga",86,"BWL"],
+["Harbhajan Singh",81,"BWL"],
+["Zaheer Khan",80,"BWL"],
+["Dhawal Kulkarni",67,"BWL"],
+["Kieron Pollard",76,"AR"],
+["Abhishek Nayar",70,"AR"],
+["Saurabh Tiwary",69,"AR"],
+["Dinesh Karthik",74,"KPR"],
+["Parthiv Patel",67,"KPR"]
+],
+"2010":[
+["Sachin Tendulkar",89,"BAT"],
+["Jean-Paul Duminy",78,"BAT"],
+["Saurabh Tiwary",75,"BAT"],
+["Shikhar Dhawan",71,"BAT"],
+["Lasith Malinga",88,"BWL"],
+["Harbhajan Singh",82,"BWL"],
+["Zaheer Khan",79,"BWL"],
+["Dhawal Kulkarni",68,"BWL"],
+["Kieron Pollard",81,"AR"],
+["Abhishek Nayar",71,"AR"],
+["Andrew Symonds",73,"AR"],
+["Ambati Rayudu",72,"KPR"],
+["Parthiv Patel",68,"KPR"]
+],
+"2011":[
+["Sachin Tendulkar",87,"BAT"],
+["Rohit Sharma",76,"BAT"],
+["Saurabh Tiwary",73,"BAT"],
+["Andrew Symonds",71,"BAT"],
+["Lasith Malinga",89,"BWL"],
+["Harbhajan Singh",81,"BWL"],
+["Munaf Patel",74,"BWL"],
+["Dhawal Kulkarni",68,"BWL"],
+["Kieron Pollard",83,"AR"],
+["James Franklin",70,"AR"],
+["Abhishek Nayar",69,"AR"],
+["Ambati Rayudu",73,"KPR"],
+["Parthiv Patel",67,"KPR"]
+],
+"2012":[
+["Sachin Tendulkar",85,"BAT"],
+["Rohit Sharma",79,"BAT"],
+["Herschelle Gibbs",72,"BAT"],
+["Dinesh Karthik",74,"BAT"],
+["Lasith Malinga",88,"BWL"],
+["Harbhajan Singh",80,"BWL"],
+["Pragyan Ojha",76,"BWL"],
+["Dhawal Kulkarni",69,"BWL"],
+["Kieron Pollard",84,"AR"],
+["James Franklin",71,"AR"],
+["Aditya Tare",66,"AR"],
+["Ambati Rayudu",73,"KPR"],
+["Parthiv Patel",67,"KPR"]
+],
+"2013":[
+["Sachin Tendulkar",83,"BAT"],
+["Rohit Sharma",82,"BAT"],
+["Dinesh Karthik",76,"BAT"],
+["Dwayne Smith",77,"BAT"],
+["Lasith Malinga",89,"BWL"],
+["Harbhajan Singh",79,"BWL"],
+["Pragyan Ojha",77,"BWL"],
+["Jasprit Bumrah",70,"BWL"],
+["Kieron Pollard",85,"AR"],
+["Rishi Dhawan",67,"AR"],
+["Aditya Tare",66,"AR"],
+["Ambati Rayudu",75,"KPR"],
+["Parthiv Patel",68,"KPR"]
+],
+"2014":[
+["Rohit Sharma",85,"BAT"],
+["Lendl Simmons",80,"BAT"],
+["Ambati Rayudu",78,"BAT"],
+["Corey Anderson",74,"BAT"],
+["Lasith Malinga",90,"BWL"],
+["Harbhajan Singh",78,"BWL"],
+["Jasprit Bumrah",73,"BWL"],
+["Pragyan Ojha",75,"BWL"],
+["Kieron Pollard",84,"AR"],
+["Corey Anderson",72,"AR"],
+["Aditya Tare",65,"AR"],
+["Parthiv Patel",71,"KPR"],
+["Aditya Tare",64,"KPR"]
+],
+"2015":[
+["Rohit Sharma",87,"BAT"],
+["Lendl Simmons",78,"BAT"],
+["Ambati Rayudu",77,"BAT"],
+["Unmukt Chand",67,"BAT"],
+["Lasith Malinga",87,"BWL"],
+["Harbhajan Singh",79,"BWL"],
+["Jasprit Bumrah",77,"BWL"],
+["Vinay Kumar",70,"BWL"],
+["Kieron Pollard",85,"AR"],
+["Krunal Pandya",72,"AR"],
+["Hardik Pandya",68,"AR"],
+["Parthiv Patel",72,"KPR"],
+["Aditya Tare",64,"KPR"]
+],
+"2016":[
+["Rohit Sharma",86,"BAT"],
+["Lendl Simmons",76,"BAT"],
+["Ambati Rayudu",76,"BAT"],
+["Jos Buttler",79,"BAT"],
+["Lasith Malinga",85,"BWL"],
+["Harbhajan Singh",77,"BWL"],
+["Jasprit Bumrah",80,"BWL"],
+["Mitchell McClenaghan",74,"BWL"],
+["Kieron Pollard",83,"AR"],
+["Krunal Pandya",74,"AR"],
+["Hardik Pandya",73,"AR"],
+["Parthiv Patel",72,"KPR"],
+["Jos Buttler",68,"KPR"]
+],
+"2017":[
+["Rohit Sharma",87,"BAT"],
+["Lendl Simmons",74,"BAT"],
+["Nitish Rana",76,"BAT"],
+["Jos Buttler",80,"BAT"],
+["Jasprit Bumrah",85,"BWL"],
+["Lasith Malinga",82,"BWL"],
+["Mitchell McClenaghan",73,"BWL"],
+["Harbhajan Singh",75,"BWL"],
+["Kieron Pollard",82,"AR"],
+["Krunal Pandya",76,"AR"],
+["Hardik Pandya",79,"AR"],
+["Parthiv Patel",71,"KPR"],
+["Ambati Rayudu",73,"KPR"]
+],
+"2018":[
+["Rohit Sharma",88,"BAT"],
+["Suryakumar Yadav",78,"BAT"],
+["Evin Lewis",77,"BAT"],
+["Ishan Kishan",72,"BAT"],
+["Jasprit Bumrah",88,"BWL"],
+["Lasith Malinga",81,"BWL"],
+["Rahul Chahar",71,"BWL"],
+["Mitchell McClenaghan",72,"BWL"],
+["Kieron Pollard",82,"AR"],
+["Hardik Pandya",83,"AR"],
+["Krunal Pandya",76,"AR"],
+["Ishan Kishan",70,"KPR"],
+["Quinton de Kock",78,"KPR"]
+],
+"2019":[
+["Rohit Sharma",89,"BAT"],
+["Quinton de Kock",83,"BAT"],
+["Suryakumar Yadav",80,"BAT"],
+["Chris Lynn",74,"BAT"],
+["Jasprit Bumrah",90,"BWL"],
+["Lasith Malinga",82,"BWL"],
+["Rahul Chahar",76,"BWL"],
+["Mitchell McClenaghan",70,"BWL"],
+["Kieron Pollard",83,"AR"],
+["Hardik Pandya",85,"AR"],
+["Krunal Pandya",77,"AR"],
+["Ishan Kishan",74,"KPR"],
+["Quinton de Kock",79,"KPR"]
+],
+"2020":[
+["Rohit Sharma",87,"BAT"],
+["Quinton de Kock",84,"BAT"],
+["Suryakumar Yadav",83,"BAT"],
+["Chris Lynn",72,"BAT"],
+["Jasprit Bumrah",91,"BWL"],
+["Trent Boult",86,"BWL"],
+["Rahul Chahar",78,"BWL"],
+["Nathan Coulter-Nile",73,"BWL"],
+["Kieron Pollard",82,"AR"],
+["Hardik Pandya",84,"AR"],
+["Krunal Pandya",76,"AR"],
+["Ishan Kishan",77,"KPR"],
+["Quinton de Kock",80,"KPR"]
+],
+"2021":[
+["Rohit Sharma",86,"BAT"],
+["Quinton de Kock",82,"BAT"],
+["Suryakumar Yadav",84,"BAT"],
+["Chris Lynn",70,"BAT"],
+["Jasprit Bumrah",90,"BWL"],
+["Trent Boult",84,"BWL"],
+["Rahul Chahar",77,"BWL"],
+["Adam Milne",71,"BWL"],
+["Kieron Pollard",80,"AR"],
+["Hardik Pandya",81,"AR"],
+["Krunal Pandya",75,"AR"],
+["Ishan Kishan",80,"KPR"],
+["Quinton de Kock",79,"KPR"]
+],
+"2022":[
+["Rohit Sharma",83,"BAT"],
+["Suryakumar Yadav",85,"BAT"],
+["Tilak Varma",74,"BAT"],
+["Dewald Brevis",70,"BAT"],
+["Jasprit Bumrah",89,"BWL"],
+["Daniel Sams",72,"BWL"],
+["Murugan Ashwin",69,"BWL"],
+["Riley Meredith",67,"BWL"],
+["Kieron Pollard",76,"AR"],
+["Tim David",77,"AR"],
+["Hrithik Shokeen",65,"AR"],
+["Ishan Kishan",78,"KPR"],
+["Tristan Stubbs",66,"KPR"]
+],
+"2023":[
+["Rohit Sharma",84,"BAT"],
+["Suryakumar Yadav",87,"BAT"],
+["Tilak Varma",78,"BAT"],
+["Cameron Green",76,"BAT"],
+["Jasprit Bumrah",90,"BWL"],
+["Piyush Chawla",71,"BWL"],
+["Akash Madhwal",73,"BWL"],
+["Jason Behrendorff",70,"BWL"],
+["Tim David",79,"AR"],
+["Cameron Green",75,"AR"],
+["Hrithik Shokeen",66,"AR"],
+["Ishan Kishan",79,"KPR"],
+["Vishnu Vinod",63,"KPR"]
+],
+"2024":[
+["Rohit Sharma",82,"BAT"],
+["Suryakumar Yadav",86,"BAT"],
+["Tilak Varma",80,"BAT"],
+["Naman Dhir",68,"BAT"],
+["Jasprit Bumrah",92,"BWL"],
+["Jofra Archer",79,"BWL"],
+["Gerald Coetzee",74,"BWL"],
+["Kumar Kartikeya",71,"BWL"],
+["Hardik Pandya",82,"AR"],
+["Tim David",80,"AR"],
+["Romario Shepherd",70,"AR"],
+["Ishan Kishan",76,"KPR"],
+["Naman Dhir",65,"KPR"]
+],
+"2025":[
+["Rohit Sharma",83,"BAT"],
+["Suryakumar Yadav",87,"BAT"],
+["Tilak Varma",82,"BAT"],
+["Naman Dhir",72,"BAT"],
+["Jasprit Bumrah",91,"BWL"],
+["Trent Boult",82,"BWL"],
+["Deepak Chahar",76,"BWL"],
+["Kumar Kartikeya",72,"BWL"],
+["Hardik Pandya",84,"AR"],
+["Tim David",80,"AR"],
+["Will Jacks",77,"AR"],
+["Ishan Kishan",78,"KPR"],
+["Ryan Rickelton",73,"KPR"]
+],
+"2026":[
+["Rohit Sharma",81,"BAT"],
+["Suryakumar Yadav",86,"BAT"],
+["Tilak Varma",83,"BAT"],
+["Naman Dhir",74,"BAT"],
+["Jasprit Bumrah",91,"BWL"],
+["Trent Boult",81,"BWL"],
+["Deepak Chahar",75,"BWL"],
+["Kumar Kartikeya",73,"BWL"],
+["Hardik Pandya",83,"AR"],
+["Tim David",79,"AR"],
+["Will Jacks",78,"AR"],
+["Ishan Kishan",77,"KPR"],
+["Ryan Rickelton",74,"KPR"]
+]
+},
+"Punjab Kings":{
+"2008":[
+["Shaun Marsh",82,"BAT"],
+["Mahela Jayawardene",80,"BAT"],
+["VVS Laxman",74,"BAT"],
+["Luke Pomersbach",70,"BAT"],
+["Brett Lee",84,"BWL"],
+["S Sreesanth",75,"BWL"],
+["Piyush Chawla",73,"BWL"],
+["VRV Singh",66,"BWL"],
+["Yuvraj Singh",87,"AR"],
+["Irfan Pathan",78,"AR"],
+["James Hopes",69,"AR"],
+["Adam Gilchrist",88,"KPR"],
+["Dinesh Karthik",72,"KPR"]
+],
+"2009":[
+["Shaun Marsh",84,"BAT"],
+["Kumar Sangakkara",83,"BAT"],
+["Mahela Jayawardene",79,"BAT"],
+["Karan Goel",65,"BAT"],
+["Brett Lee",85,"BWL"],
+["S Sreesanth",76,"BWL"],
+["Yusuf Abdulla",68,"BWL"],
+["VRV Singh",66,"BWL"],
+["Yuvraj Singh",86,"AR"],
+["Irfan Pathan",79,"AR"],
+["James Faulkner",68,"AR"],
+["Adam Gilchrist",87,"KPR"],
+["Kumar Sangakkara",80,"KPR"]
+],
+"2010":[
+["Shaun Marsh",83,"BAT"],
+["Paul Valthaty",72,"BAT"],
+["Kumar Sangakkara",82,"BAT"],
+["Mahela Jayawardene",78,"BAT"],
+["Brett Lee",84,"BWL"],
+["S Sreesanth",74,"BWL"],
+["Piyush Chawla",76,"BWL"],
+["VRV Singh",65,"BWL"],
+["Yuvraj Singh",85,"AR"],
+["Irfan Pathan",77,"AR"],
+["James Faulkner",69,"AR"],
+["Adam Gilchrist",86,"KPR"],
+["Kumar Sangakkara",79,"KPR"]
+],
+"2011":[
+["Shaun Marsh",85,"BAT"],
+["Paul Valthaty",78,"BAT"],
+["Kumar Sangakkara",81,"BAT"],
+["Adam Gilchrist",84,"BAT"],
+["Brett Lee",83,"BWL"],
+["S Sreesanth",73,"BWL"],
+["Piyush Chawla",77,"BWL"],
+["Praveen Kumar",74,"BWL"],
+["Yuvraj Singh",84,"AR"],
+["Irfan Pathan",76,"AR"],
+["David Hussey",73,"AR"],
+["Adam Gilchrist",85,"KPR"],
+["Dinesh Karthik",73,"KPR"]
+],
+"2012":[
+["Shaun Marsh",80,"BAT"],
+["David Hussey",74,"BAT"],
+["Mandeep Singh",70,"BAT"],
+["Azhar Mahmood",72,"BAT"],
+["Parvinder Awana",73,"BWL"],
+["Harmeet Singh",67,"BWL"],
+["Dimitri Mascarenhas",71,"BWL"],
+["Praveen Kumar",75,"BWL"],
+["David Miller",76,"AR"],
+["Azhar Mahmood",71,"AR"],
+["Adam Gilchrist",80,"AR"],
+["Adam Gilchrist",81,"KPR"],
+["Nikhil Naik",63,"KPR"]
+],
+"2013":[
+["David Miller",83,"BAT"],
+["Shaun Marsh",79,"BAT"],
+["Mandeep Singh",72,"BAT"],
+["Manan Vohra",68,"BAT"],
+["Parvinder Awana",74,"BWL"],
+["Sandeep Sharma",72,"BWL"],
+["Harmeet Singh",66,"BWL"],
+["Ryan Harris",76,"BWL"],
+["Adam Gilchrist",78,"AR"],
+["David Hussey",72,"AR"],
+["Luke Wright",71,"AR"],
+["Adam Gilchrist",79,"KPR"],
+["Nikhil Naik",63,"KPR"]
+],
+"2014":[
+["Glenn Maxwell",88,"BAT"],
+["Virender Sehwag",80,"BAT"],
+["Manan Vohra",73,"BAT"],
+["Wriddhiman Saha",72,"BAT"],
+["Mitchell Johnson",86,"BWL"],
+["Sandeep Sharma",76,"BWL"],
+["Akshar Patel",75,"BWL"],
+["Lakshmipathy Balaji",70,"BWL"],
+["David Miller",82,"AR"],
+["George Bailey",77,"AR"],
+["Thisara Perera",73,"AR"],
+["Wriddhiman Saha",74,"KPR"],
+["Manan Vohra",65,"KPR"]
+],
+"2015":[
+["Glenn Maxwell",82,"BAT"],
+["Virender Sehwag",76,"BAT"],
+["Manan Vohra",71,"BAT"],
+["Shaun Marsh",78,"BAT"],
+["Mitchell Johnson",84,"BWL"],
+["Sandeep Sharma",77,"BWL"],
+["Akshar Patel",76,"BWL"],
+["Anureet Singh",67,"BWL"],
+["David Miller",81,"AR"],
+["George Bailey",76,"AR"],
+["Marcus Stoinis",72,"AR"],
+["Wriddhiman Saha",73,"KPR"],
+["Nikhil Naik",63,"KPR"]
+],
+"2016":[
+["Glenn Maxwell",80,"BAT"],
+["Murali Vijay",76,"BAT"],
+["Manan Vohra",70,"BAT"],
+["Shaun Marsh",79,"BAT"],
+["Sandeep Sharma",76,"BWL"],
+["Akshar Patel",77,"BWL"],
+["Mohit Sharma",72,"BWL"],
+["KC Cariappa",66,"BWL"],
+["David Miller",80,"AR"],
+["Marcus Stoinis",74,"AR"],
+["Wriddhiman Saha",72,"AR"],
+["Wriddhiman Saha",74,"KPR"],
+["Nikhil Naik",63,"KPR"]
+],
+"2017":[
+["Glenn Maxwell",84,"BAT"],
+["Hashim Amla",79,"BAT"],
+["Manan Vohra",71,"BAT"],
+["Martin Guptill",76,"BAT"],
+["Sandeep Sharma",75,"BWL"],
+["Axar Patel",77,"BWL"],
+["Mohit Sharma",72,"BWL"],
+["KC Cariappa",67,"BWL"],
+["David Miller",80,"AR"],
+["Marcus Stoinis",75,"AR"],
+["Wriddhiman Saha",73,"AR"],
+["Wriddhiman Saha",74,"KPR"],
+["Manan Vohra",66,"KPR"]
+],
+"2018":[
+["KL Rahul",85,"BAT"],
+["Chris Gayle",86,"BAT"],
+["Mayank Agarwal",77,"BAT"],
+["Aaron Finch",78,"BAT"],
+["Andrew Tye",82,"BWL"],
+["Mujeeb Ur Rahman",76,"BWL"],
+["Axar Patel",75,"BWL"],
+["Ankit Rajpoot",69,"BWL"],
+["David Miller",79,"AR"],
+["Marcus Stoinis",74,"AR"],
+["Manoj Tiwary",68,"AR"],
+["KL Rahul",83,"KPR"],
+["Wriddhiman Saha",72,"KPR"]
+],
+"2019":[
+["KL Rahul",87,"BAT"],
+["Chris Gayle",84,"BAT"],
+["Mayank Agarwal",80,"BAT"],
+["Nicholas Pooran",74,"BAT"],
+["Mohammed Shami",83,"BWL"],
+["Mujeeb Ur Rahman",77,"BWL"],
+["Sam Curran",75,"BWL"],
+["Arshdeep Singh",68,"BWL"],
+["David Miller",78,"AR"],
+["Moises Henriques",71,"AR"],
+["Deepak Hooda",70,"AR"],
+["KL Rahul",85,"KPR"],
+["Nicholas Pooran",72,"KPR"]
+],
+"2020":[
+["KL Rahul",89,"BAT"],
+["Chris Gayle",82,"BAT"],
+["Mayank Agarwal",83,"BAT"],
+["Nicholas Pooran",77,"BAT"],
+["Mohammed Shami",85,"BWL"],
+["Mujeeb Ur Rahman",76,"BWL"],
+["Ravi Bishnoi",74,"BWL"],
+["Arshdeep Singh",72,"BWL"],
+["Glenn Maxwell",78,"AR"],
+["Deepak Hooda",73,"AR"],
+["Chris Jordan",71,"AR"],
+["KL Rahul",87,"KPR"],
+["Nicholas Pooran",75,"KPR"]
+],
+"2021":[
+["KL Rahul",88,"BAT"],
+["Mayank Agarwal",82,"BAT"],
+["Chris Gayle",79,"BAT"],
+["Nicholas Pooran",76,"BAT"],
+["Mohammed Shami",84,"BWL"],
+["Arshdeep Singh",76,"BWL"],
+["Ravi Bishnoi",77,"BWL"],
+["Jhye Richardson",74,"BWL"],
+["Deepak Hooda",75,"AR"],
+["Moises Henriques",71,"AR"],
+["Chris Jordan",72,"AR"],
+["KL Rahul",86,"KPR"],
+["Jonny Bairstow",78,"KPR"]
+],
+"2022":[
+["Shikhar Dhawan",80,"BAT"],
+["Liam Livingstone",82,"BAT"],
+["Jonny Bairstow",81,"BAT"],
+["Bhanuka Rajapaksa",73,"BAT"],
+["Kagiso Rabada",85,"BWL"],
+["Arshdeep Singh",79,"BWL"],
+["Rahul Chahar",76,"BWL"],
+["Sandeep Sharma",71,"BWL"],
+["Liam Livingstone",80,"AR"],
+["Odean Smith",69,"AR"],
+["Rishi Dhawan",67,"AR"],
+["Jitesh Sharma",72,"KPR"],
+["Jonny Bairstow",79,"KPR"]
+],
+"2023":[
+["Shikhar Dhawan",77,"BAT"],
+["Liam Livingstone",81,"BAT"],
+["Prabhsimran Singh",74,"BAT"],
+["Atharva Taide",67,"BAT"],
+["Kagiso Rabada",86,"BWL"],
+["Arshdeep Singh",82,"BWL"],
+["Rahul Chahar",75,"BWL"],
+["Nathan Ellis",74,"BWL"],
+["Sam Curran",83,"AR"],
+["Sikandar Raza",73,"AR"],
+["Harpreet Brar",70,"AR"],
+["Jitesh Sharma",73,"KPR"],
+["Prabhsimran Singh",68,"KPR"]
+],
+"2024":[
+["Shikhar Dhawan",74,"BAT"],
+["Liam Livingstone",80,"BAT"],
+["Prabhsimran Singh",72,"BAT"],
+["Jonny Bairstow",79,"BAT"],
+["Kagiso Rabada",84,"BWL"],
+["Arshdeep Singh",83,"BWL"],
+["Harshal Patel",78,"BWL"],
+["Rahul Chahar",74,"BWL"],
+["Sam Curran",84,"AR"],
+["Ashutosh Sharma",71,"AR"],
+["Sikandar Raza",72,"AR"],
+["Jitesh Sharma",74,"KPR"],
+["Jonny Bairstow",77,"KPR"]
+],
+"2025":[
+["Shreyas Iyer",84,"BAT"],
+["Prabhsimran Singh",75,"BAT"],
+["Marcus Stoinis",80,"BAT"],
+["Pyla Avinash",67,"BAT"],
+["Arshdeep Singh",85,"BWL"],
+["Yuzvendra Chahal",82,"BWL"],
+["Lockie Ferguson",80,"BWL"],
+["Harpreet Brar",73,"BWL"],
+["Glenn Maxwell",81,"AR"],
+["Marcus Stoinis",79,"AR"],
+["Ashutosh Sharma",72,"AR"],
+["Prabhsimran Singh",73,"KPR"],
+["Josh Inglis",76,"KPR"]
+],
+"2026":[
+["Shreyas Iyer",85,"BAT"],
+["Prabhsimran Singh",76,"BAT"],
+["Marcus Stoinis",81,"BAT"],
+["Pyla Avinash",69,"BAT"],
+["Arshdeep Singh",86,"BWL"],
+["Yuzvendra Chahal",83,"BWL"],
+["Lockie Ferguson",81,"BWL"],
+["Harpreet Brar",74,"BWL"],
+["Glenn Maxwell",80,"AR"],
+["Marcus Stoinis",80,"AR"],
+["Ashutosh Sharma",73,"AR"],
+["Prabhsimran Singh",74,"KPR"],
+["Josh Inglis",77,"KPR"]
+]
+},
+"Rajasthan Royals":{
+"2008":[
+["Shane Watson",87,"BAT"],
+["Graeme Smith",80,"BAT"],
+["Mohammad Kaif",73,"BAT"],
+["Swapnil Asnodkar",72,"BAT"],
+["Shane Warne",86,"BWL"],
+["Siddharth Trivedi",76,"BWL"],
+["Munaf Patel",74,"BWL"],
+["Kamran Khan",68,"BWL"],
+["Yusuf Pathan",84,"AR"],
+["Ravindra Jadeja",74,"AR"],
+["Dimitri Mascarenhas",73,"AR"],
+["Naman Ojha",71,"KPR"],
+["Dishant Yagnik",64,"KPR"]
+],
+"2009":[
+["Shane Watson",85,"BAT"],
+["Graeme Smith",78,"BAT"],
+["Swapnil Asnodkar",70,"BAT"],
+["Naman Ojha",72,"BAT"],
+["Shane Warne",83,"BWL"],
+["Siddharth Trivedi",74,"BWL"],
+["Munaf Patel",73,"BWL"],
+["Kamran Khan",67,"BWL"],
+["Yusuf Pathan",85,"AR"],
+["Ravindra Jadeja",77,"AR"],
+["Dimitri Mascarenhas",72,"AR"],
+["Naman Ojha",70,"KPR"],
+["Dishant Yagnik",64,"KPR"]
+],
+"2010":[
+["Shane Watson",86,"BAT"],
+["Naman Ojha",74,"BAT"],
+["Swapnil Asnodkar",69,"BAT"],
+["Ross Taylor",77,"BAT"],
+["Shane Warne",81,"BWL"],
+["Siddharth Trivedi",75,"BWL"],
+["Amit Singh",68,"BWL"],
+["Kamran Khan",66,"BWL"],
+["Yusuf Pathan",82,"AR"],
+["Ravindra Jadeja",78,"AR"],
+["Johan Botha",71,"AR"],
+["Naman Ojha",72,"KPR"],
+["Dishant Yagnik",65,"KPR"]
+],
+"2011":[
+["Shane Watson",84,"BAT"],
+["Rahul Dravid",82,"BAT"],
+["Ross Taylor",76,"BAT"],
+["Owais Shah",70,"BAT"],
+["Shane Warne",80,"BWL"],
+["Siddharth Trivedi",74,"BWL"],
+["Johan Botha",72,"BWL"],
+["Amit Singh",67,"BWL"],
+["Yusuf Pathan",80,"AR"],
+["Ravindra Jadeja",79,"AR"],
+["Paul Collingwood",71,"AR"],
+["Naman Ojha",71,"KPR"],
+["Dishant Yagnik",65,"KPR"]
+],
+"2012":[
+["Ajinkya Rahane",79,"BAT"],
+["Rahul Dravid",80,"BAT"],
+["Shane Watson",83,"BAT"],
+["Owais Shah",69,"BAT"],
+["Siddharth Trivedi",75,"BWL"],
+["Ankeet Chavan",71,"BWL"],
+["Brad Hogg",73,"BWL"],
+["Amit Singh",67,"BWL"],
+["Johan Botha",72,"AR"],
+["Stuart Binny",68,"AR"],
+["Kevon Cooper",70,"AR"],
+["Dishant Yagnik",67,"KPR"],
+["Sanju Samson",65,"KPR"]
+],
+"2013":[
+["Ajinkya Rahane",82,"BAT"],
+["Shane Watson",85,"BAT"],
+["Rahul Dravid",78,"BAT"],
+["Stuart Binny",70,"BAT"],
+["James Faulkner",82,"BWL"],
+["Siddharth Trivedi",73,"BWL"],
+["Pravin Tambe",74,"BWL"],
+["Ankeet Chavan",68,"BWL"],
+["Shane Watson",82,"AR"],
+["Stuart Binny",70,"AR"],
+["Brad Hodge",74,"AR"],
+["Sanju Samson",72,"KPR"],
+["Dishant Yagnik",66,"KPR"]
+],
+"2014":[
+["Ajinkya Rahane",83,"BAT"],
+["Shane Watson",84,"BAT"],
+["Sanju Samson",76,"BAT"],
+["Karun Nair",71,"BAT"],
+["James Faulkner",81,"BWL"],
+["Pravin Tambe",76,"BWL"],
+["Dhawal Kulkarni",73,"BWL"],
+["Kane Richardson",72,"BWL"],
+["Steven Smith",80,"AR"],
+["Stuart Binny",73,"AR"],
+["Brad Hodge",74,"AR"],
+["Sanju Samson",74,"KPR"],
+["Dishant Yagnik",65,"KPR"]
+],
+"2015":[
+["Ajinkya Rahane",84,"BAT"],
+["Shane Watson",82,"BAT"],
+["Steven Smith",82,"BAT"],
+["Karun Nair",73,"BAT"],
+["James Faulkner",80,"BWL"],
+["Pravin Tambe",75,"BWL"],
+["Dhawal Kulkarni",74,"BWL"],
+["Tim Southee",76,"BWL"],
+["Steven Smith",81,"AR"],
+["Stuart Binny",71,"AR"],
+["Chris Morris",73,"AR"],
+["Sanju Samson",76,"KPR"],
+["Naman Ojha",67,"KPR"]
+],
+"2016":[
+["Ajinkya Rahane",82,"BAT"],
+["Shane Watson",80,"BAT"],
+["Steven Smith",83,"BAT"],
+["Karun Nair",75,"BAT"],
+["Dhawal Kulkarni",74,"BWL"],
+["Pravin Tambe",73,"BWL"],
+["Tim Southee",75,"BWL"],
+["Rajat Bhatia",68,"BWL"],
+["Steven Smith",82,"AR"],
+["Stuart Binny",70,"AR"],
+["Chris Morris",74,"AR"],
+["Sanju Samson",77,"KPR"],
+["Naman Ojha",66,"KPR"]
+],
+"2017":[
+["Ajinkya Rahane",80,"BAT"],
+["Steven Smith",84,"BAT"],
+["Ben Stokes",82,"BAT"],
+["Sanju Samson",78,"BAT"],
+["Jaydev Unadkat",78,"BWL"],
+["Shreyas Gopal",72,"BWL"],
+["Dhawal Kulkarni",73,"BWL"],
+["Ankit Sharma",66,"BWL"],
+["Ben Stokes",83,"AR"],
+["Stuart Binny",68,"AR"],
+["Rahul Tewatia",67,"AR"],
+["Sanju Samson",77,"KPR"],
+["Naman Ojha",65,"KPR"]
+],
+"2018":[
+["Ajinkya Rahane",79,"BAT"],
+["Sanju Samson",80,"BAT"],
+["Jos Buttler",84,"BAT"],
+["Rahul Tripathi",76,"BAT"],
+["Jofra Archer",82,"BWL"],
+["Jaydev Unadkat",74,"BWL"],
+["Shreyas Gopal",76,"BWL"],
+["Dhawal Kulkarni",72,"BWL"],
+["Ben Stokes",85,"AR"],
+["Krishnappa Gowtham",72,"AR"],
+["Stuart Binny",67,"AR"],
+["Jos Buttler",82,"KPR"],
+["Sanju Samson",78,"KPR"]
+],
+"2019":[
+["Ajinkya Rahane",77,"BAT"],
+["Steve Smith",82,"BAT"],
+["Jos Buttler",83,"BAT"],
+["Sanju Samson",79,"BAT"],
+["Jofra Archer",84,"BWL"],
+["Shreyas Gopal",79,"BWL"],
+["Jaydev Unadkat",73,"BWL"],
+["Varun Aaron",69,"BWL"],
+["Ben Stokes",84,"AR"],
+["Rahul Tewatia",70,"AR"],
+["Riyan Parag",67,"AR"],
+["Jos Buttler",81,"KPR"],
+["Sanju Samson",78,"KPR"]
+],
+"2020":[
+["Steve Smith",81,"BAT"],
+["Jos Buttler",82,"BAT"],
+["Sanju Samson",81,"BAT"],
+["Robin Uthappa",74,"BAT"],
+["Jofra Archer",85,"BWL"],
+["Shreyas Gopal",77,"BWL"],
+["Jaydev Unadkat",72,"BWL"],
+["Kartik Tyagi",68,"BWL"],
+["Ben Stokes",86,"AR"],
+["Rahul Tewatia",78,"AR"],
+["Riyan Parag",70,"AR"],
+["Jos Buttler",80,"KPR"],
+["Sanju Samson",80,"KPR"]
+],
+"2021":[
+["Sanju Samson",82,"BAT"],
+["Jos Buttler",84,"BAT"],
+["Yashasvi Jaiswal",75,"BAT"],
+["Shivam Dube",73,"BAT"],
+["Chris Morris",79,"BWL"],
+["Mustafizur Rahman",77,"BWL"],
+["Jaydev Unadkat",72,"BWL"],
+["Chetan Sakariya",74,"BWL"],
+["Ben Stokes",83,"AR"],
+["Rahul Tewatia",77,"AR"],
+["Riyan Parag",72,"AR"],
+["Jos Buttler",82,"KPR"],
+["Sanju Samson",81,"KPR"]
+],
+"2022":[
+["Jos Buttler",90,"BAT"],
+["Yashasvi Jaiswal",80,"BAT"],
+["Sanju Samson",83,"BAT"],
+["Devdutt Padikkal",76,"BAT"],
+["Trent Boult",84,"BWL"],
+["Yuzvendra Chahal",86,"BWL"],
+["Prasidh Krishna",78,"BWL"],
+["Obed McCoy",74,"BWL"],
+["R Ashwin",80,"AR"],
+["Riyan Parag",74,"AR"],
+["Shimron Hetmyer",79,"AR"],
+["Jos Buttler",88,"KPR"],
+["Sanju Samson",82,"KPR"]
+],
+"2023":[
+["Jos Buttler",84,"BAT"],
+["Yashasvi Jaiswal",83,"BAT"],
+["Sanju Samson",82,"BAT"],
+["Devdutt Padikkal",75,"BAT"],
+["Trent Boult",83,"BWL"],
+["Yuzvendra Chahal",84,"BWL"],
+["Sandeep Sharma",71,"BWL"],
+["Jason Holder",76,"BWL"],
+["R Ashwin",79,"AR"],
+["Riyan Parag",76,"AR"],
+["Shimron Hetmyer",78,"AR"],
+["Jos Buttler",82,"KPR"],
+["Sanju Samson",81,"KPR"]
+],
+"2024":[
+["Jos Buttler",82,"BAT"],
+["Yashasvi Jaiswal",85,"BAT"],
+["Sanju Samson",84,"BAT"],
+["Shimron Hetmyer",78,"BAT"],
+["Trent Boult",82,"BWL"],
+["Yuzvendra Chahal",83,"BWL"],
+["Avesh Khan",75,"BWL"],
+["Sandeep Sharma",70,"BWL"],
+["R Ashwin",80,"AR"],
+["Riyan Parag",80,"AR"],
+["Rovman Powell",74,"AR"],
+["Sanju Samson",83,"KPR"],
+["Dhruv Jurel",72,"KPR"]
+],
+"2025":[
+["Yashasvi Jaiswal",86,"BAT"],
+["Sanju Samson",85,"BAT"],
+["Shimron Hetmyer",79,"BAT"],
+["Nitish Rana",74,"BAT"],
+["Jofra Archer",83,"BWL"],
+["Yuzvendra Chahal",82,"BWL"],
+["Wanindu Hasaranga",80,"BWL"],
+["Tushar Deshpande",73,"BWL"],
+["Riyan Parag",81,"AR"],
+["Shivam Dube",78,"AR"],
+["Donovan Ferreira",70,"AR"],
+["Sanju Samson",84,"KPR"],
+["Dhruv Jurel",74,"KPR"]
+],
+"2026":[
+["Yashasvi Jaiswal",87,"BAT"],
+["Sanju Samson",84,"BAT"],
+["Shimron Hetmyer",80,"BAT"],
+["Nitish Rana",75,"BAT"],
+["Jofra Archer",84,"BWL"],
+["Yuzvendra Chahal",83,"BWL"],
+["Wanindu Hasaranga",81,"BWL"],
+["Tushar Deshpande",74,"BWL"],
+["Riyan Parag",82,"AR"],
+["Shivam Dube",79,"AR"],
+["Donovan Ferreira",71,"AR"],
+["Sanju Samson",85,"KPR"],
+["Dhruv Jurel",75,"KPR"]
+]
+},
+"Royal Challengers Bengaluru":{
+"2008":[
+["Rahul Dravid",82,"BAT"],
+["Jacques Kallis",83,"BAT"],
+["Virat Kohli",68,"BAT"],
+["Manish Pandey",66,"BAT"],
+["Anil Kumble",80,"BWL"],
+["Praveen Kumar",74,"BWL"],
+["Dale Steyn",82,"BWL"],
+["Vinay Kumar",70,"BWL"],
+["Kevin Pietersen",81,"AR"],
+["Ross Taylor",73,"AR"],
+["Mark Boucher",71,"AR"],
+["Mark Boucher",74,"KPR"],
+["Arun Karthik",63,"KPR"]
+],
+"2009":[
+["Rahul Dravid",80,"BAT"],
+["Jacques Kallis",84,"BAT"],
+["Virat Kohli",72,"BAT"],
+["Robin Uthappa",76,"BAT"],
+["Anil Kumble",78,"BWL"],
+["Praveen Kumar",76,"BWL"],
+["Dale Steyn",83,"BWL"],
+["Vinay Kumar",71,"BWL"],
+["Kevin Pietersen",80,"AR"],
+["Ross Taylor",74,"AR"],
+["Roelof van der Merwe",69,"AR"],
+["Mark Boucher",73,"KPR"],
+["Arun Karthik",64,"KPR"]
+],
+"2010":[
+["Virat Kohli",76,"BAT"],
+["Jacques Kallis",82,"BAT"],
+["Robin Uthappa",78,"BAT"],
+["Manish Pandey",71,"BAT"],
+["Dale Steyn",84,"BWL"],
+["Praveen Kumar",77,"BWL"],
+["Anil Kumble",76,"BWL"],
+["Vinay Kumar",72,"BWL"],
+["Kevin Pietersen",79,"AR"],
+["Roelof van der Merwe",70,"AR"],
+["Jesse Ryder",72,"AR"],
+["Mark Boucher",72,"KPR"],
+["Arun Karthik",64,"KPR"]
+],
+"2011":[
+["Virat Kohli",80,"BAT"],
+["Chris Gayle",90,"BAT"],
+["AB de Villiers",85,"BAT"],
+["Tillakaratne Dilshan",82,"BAT"],
+["Dale Steyn",84,"BWL"],
+["Sreenath Aravind",75,"BWL"],
+["Zaheer Khan",78,"BWL"],
+["Vinay Kumar",72,"BWL"],
+["Daniel Vettori",77,"AR"],
+["Luke Pomersbach",70,"AR"],
+["Muttiah Muralitharan",76,"AR"],
+["AB de Villiers",82,"KPR"],
+["Arun Karthik",65,"KPR"]
+],
+"2012":[
+["Virat Kohli",84,"BAT"],
+["Chris Gayle",92,"BAT"],
+["AB de Villiers",87,"BAT"],
+["Tillakaratne Dilshan",80,"BAT"],
+["Muttiah Muralitharan",78,"BWL"],
+["Zaheer Khan",77,"BWL"],
+["Sreenath Aravind",74,"BWL"],
+["Vinay Kumar",73,"BWL"],
+["Daniel Vettori",76,"AR"],
+["Cheteshwar Pujara",69,"AR"],
+["Andrew McDonald",70,"AR"],
+["AB de Villiers",84,"KPR"],
+["Arun Karthik",64,"KPR"]
+],
+"2013":[
+["Virat Kohli",85,"BAT"],
+["Chris Gayle",91,"BAT"],
+["AB de Villiers",88,"BAT"],
+["Saurabh Tiwary",72,"BAT"],
+["R P Singh",73,"BWL"],
+["Vinay Kumar",74,"BWL"],
+["Ravi Rampaul",76,"BWL"],
+["Jaydev Unadkat",68,"BWL"],
+["Daniel Vettori",75,"AR"],
+["Moises Henriques",72,"AR"],
+["Andrew McDonald",69,"AR"],
+["AB de Villiers",85,"KPR"],
+["Arun Karthik",64,"KPR"]
+],
+"2014":[
+["Virat Kohli",87,"BAT"],
+["Chris Gayle",88,"BAT"],
+["AB de Villiers",90,"BAT"],
+["Yuvraj Singh",77,"BAT"],
+["Yuzvendra Chahal",74,"BWL"],
+["Mitchell Starc",82,"BWL"],
+["Varun Aaron",73,"BWL"],
+["Harshal Patel",68,"BWL"],
+["Shane Watson",79,"AR"],
+["Albie Morkel",72,"AR"],
+["Ravi Rampaul",70,"AR"],
+["AB de Villiers",87,"KPR"],
+["Dinesh Karthik",73,"KPR"]
+],
+"2015":[
+["Virat Kohli",88,"BAT"],
+["Chris Gayle",87,"BAT"],
+["AB de Villiers",91,"BAT"],
+["KL Rahul",74,"BAT"],
+["Mitchell Starc",83,"BWL"],
+["Yuzvendra Chahal",78,"BWL"],
+["Harshal Patel",72,"BWL"],
+["David Wiese",71,"BWL"],
+["Shane Watson",80,"AR"],
+["Stuart Binny",68,"AR"],
+["Mandeep Singh",70,"AR"],
+["AB de Villiers",88,"KPR"],
+["Dinesh Karthik",74,"KPR"]
+],
+"2016":[
+["Virat Kohli",92,"BAT"],
+["Chris Gayle",85,"BAT"],
+["AB de Villiers",91,"BAT"],
+["KL Rahul",80,"BAT"],
+["Yuzvendra Chahal",83,"BWL"],
+["Shane Watson",76,"BWL"],
+["Harshal Patel",73,"BWL"],
+["Sreenath Aravind",72,"BWL"],
+["Shane Watson",81,"AR"],
+["Stuart Binny",67,"AR"],
+["Sachin Baby",65,"AR"],
+["AB de Villiers",89,"KPR"],
+["KL Rahul",77,"KPR"]
+],
+"2017":[
+["Virat Kohli",86,"BAT"],
+["Chris Gayle",80,"BAT"],
+["AB de Villiers",87,"BAT"],
+["Travis Head",73,"BAT"],
+["Yuzvendra Chahal",82,"BWL"],
+["Shane Watson",74,"BWL"],
+["Tymal Mills",71,"BWL"],
+["Aniket Choudhary",65,"BWL"],
+["Shane Watson",78,"AR"],
+["Stuart Binny",66,"AR"],
+["Pawan Negi",69,"AR"],
+["AB de Villiers",85,"KPR"],
+["Kedar Jadhav",72,"KPR"]
+],
+"2018":[
+["Virat Kohli",88,"BAT"],
+["AB de Villiers",88,"BAT"],
+["Brendon McCullum",74,"BAT"],
+["Quinton de Kock",79,"BAT"],
+["Yuzvendra Chahal",84,"BWL"],
+["Umesh Yadav",78,"BWL"],
+["Mohammed Siraj",71,"BWL"],
+["Tim Southee",73,"BWL"],
+["Washington Sundar",72,"AR"],
+["Moeen Ali",76,"AR"],
+["Colin de Grandhomme",73,"AR"],
+["Quinton de Kock",77,"KPR"],
+["Parthiv Patel",70,"KPR"]
+],
+"2019":[
+["Virat Kohli",89,"BAT"],
+["AB de Villiers",86,"BAT"],
+["Parthiv Patel",72,"BAT"],
+["Shimron Hetmyer",74,"BAT"],
+["Yuzvendra Chahal",83,"BWL"],
+["Umesh Yadav",76,"BWL"],
+["Mohammed Siraj",74,"BWL"],
+["Navdeep Saini",73,"BWL"],
+["Marcus Stoinis",77,"AR"],
+["Moeen Ali",78,"AR"],
+["Washington Sundar",73,"AR"],
+["Parthiv Patel",71,"KPR"],
+["AB de Villiers",84,"KPR"]
+],
+"2020":[
+["Virat Kohli",87,"BAT"],
+["AB de Villiers",86,"BAT"],
+["Devdutt Padikkal",77,"BAT"],
+["Aaron Finch",75,"BAT"],
+["Yuzvendra Chahal",82,"BWL"],
+["Mohammed Siraj",78,"BWL"],
+["Navdeep Saini",74,"BWL"],
+["Chris Morris",76,"BWL"],
+["Washington Sundar",74,"AR"],
+["Moeen Ali",77,"AR"],
+["Shivam Dube",70,"AR"],
+["AB de Villiers",84,"KPR"],
+["Joshua Philippe",65,"KPR"]
+],
+"2021":[
+["Virat Kohli",86,"BAT"],
+["AB de Villiers",84,"BAT"],
+["Devdutt Padikkal",79,"BAT"],
+["Glenn Maxwell",86,"BAT"],
+["Harshal Patel",85,"BWL"],
+["Yuzvendra Chahal",81,"BWL"],
+["Mohammed Siraj",80,"BWL"],
+["Kyle Jamieson",72,"BWL"],
+["Washington Sundar",75,"AR"],
+["Glenn Maxwell",84,"AR"],
+["Daniel Christian",69,"AR"],
+["AB de Villiers",83,"KPR"],
+["KS Bharat",67,"KPR"]
+],
+"2022":[
+["Virat Kohli",83,"BAT"],
+["Faf du Plessis",85,"BAT"],
+["Rajat Patidar",79,"BAT"],
+["Anuj Rawat",67,"BAT"],
+["Harshal Patel",82,"BWL"],
+["Wanindu Hasaranga",81,"BWL"],
+["Mohammed Siraj",79,"BWL"],
+["Josh Hazlewood",80,"BWL"],
+["Glenn Maxwell",83,"AR"],
+["Shahbaz Ahmed",72,"AR"],
+["Mahipal Lomror",68,"AR"],
+["Dinesh Karthik",80,"KPR"],
+["Anuj Rawat",64,"KPR"]
+],
+"2023":[
+["Virat Kohli",87,"BAT"],
+["Faf du Plessis",82,"BAT"],
+["Rajat Patidar",80,"BAT"],
+["Anuj Rawat",66,"BAT"],
+["Mohammed Siraj",80,"BWL"],
+["Wanindu Hasaranga",79,"BWL"],
+["Harshal Patel",78,"BWL"],
+["Josh Hazlewood",81,"BWL"],
+["Glenn Maxwell",82,"AR"],
+["Shahbaz Ahmed",71,"AR"],
+["Mahipal Lomror",67,"AR"],
+["Dinesh Karthik",78,"KPR"],
+["Anuj Rawat",65,"KPR"]
+],
+"2024":[
+["Virat Kohli",88,"BAT"],
+["Faf du Plessis",80,"BAT"],
+["Rajat Patidar",81,"BAT"],
+["Cameron Green",77,"BAT"],
+["Mohammed Siraj",79,"BWL"],
+["Yash Dayal",74,"BWL"],
+["Lockie Ferguson",78,"BWL"],
+["Karn Sharma",69,"BWL"],
+["Glenn Maxwell",81,"AR"],
+["Cameron Green",76,"AR"],
+["Swapnil Singh",66,"AR"],
+["Dinesh Karthik",77,"KPR"],
+["Anuj Rawat",65,"KPR"]
+],
+"2025":[
+["Virat Kohli",89,"BAT"],
+["Phil Salt",84,"BAT"],
+["Rajat Patidar",82,"BAT"],
+["Liam Livingstone",80,"BAT"],
+["Josh Hazlewood",82,"BWL"],
+["Bhuvneshwar Kumar",76,"BWL"],
+["Yash Dayal",75,"BWL"],
+["Krunal Pandya",74,"BWL"],
+["Krunal Pandya",73,"AR"],
+["Tim David",78,"AR"],
+["Swapnil Singh",67,"AR"],
+["Phil Salt",82,"KPR"],
+["Jitesh Sharma",70,"KPR"]
+],
+"2026":[
+["Virat Kohli",88,"BAT"],
+["Phil Salt",85,"BAT"],
+["Rajat Patidar",83,"BAT"],
+["Liam Livingstone",81,"BAT"],
+["Josh Hazlewood",83,"BWL"],
+["Bhuvneshwar Kumar",75,"BWL"],
+["Yash Dayal",76,"BWL"],
+["Suyash Sharma",68,"BWL"],
+["Krunal Pandya",74,"AR"],
+["Tim David",79,"AR"],
+["Romario Shepherd",70,"AR"],
+["Phil Salt",83,"KPR"],
+["Jitesh Sharma",71,"KPR"]
+]
+},
+"Sunrisers Hyderabad":{
+"2013":[
+["Shikhar Dhawan",84,"BAT"],
+["Cameron White",73,"BAT"],
+["Quinton de Kock",72,"BAT"],
+["Parthiv Patel",71,"BAT"],
+["Dale Steyn",86,"BWL"],
+["Amit Mishra",80,"BWL"],
+["Ishant Sharma",74,"BWL"],
+["Karan Sharma",68,"BWL"],
+["Darren Sammy",74,"AR"],
+["Thisara Perera",73,"AR"],
+["Hanuma Vihari",65,"AR"],
+["Parthiv Patel",70,"KPR"],
+["Quinton de Kock",71,"KPR"]
+],
+"2014":[
+["Shikhar Dhawan",85,"BAT"],
+["David Warner",86,"BAT"],
+["Aaron Finch",77,"BAT"],
+["Moises Henriques",73,"BAT"],
+["Dale Steyn",87,"BWL"],
+["Bhuvneshwar Kumar",84,"BWL"],
+["Amit Mishra",81,"BWL"],
+["Karn Sharma",72,"BWL"],
+["Darren Sammy",75,"AR"],
+["Irfan Pathan",72,"AR"],
+["Moises Henriques",71,"AR"],
+["Naman Ojha",69,"KPR"],
+["Parthiv Patel",68,"KPR"]
+],
+"2015":[
+["David Warner",88,"BAT"],
+["Shikhar Dhawan",84,"BAT"],
+["Kane Williamson",78,"BAT"],
+["Eoin Morgan",76,"BAT"],
+["Dale Steyn",86,"BWL"],
+["Bhuvneshwar Kumar",85,"BWL"],
+["Amit Mishra",79,"BWL"],
+["Karn Sharma",73,"BWL"],
+["Ben Cutting",74,"AR"],
+["Moises Henriques",72,"AR"],
+["Ravi Bopara",69,"AR"],
+["Naman Ojha",70,"KPR"],
+["Shreevats Goswami",63,"KPR"]
+],
+"2016":[
+["David Warner",91,"BAT"],
+["Shikhar Dhawan",86,"BAT"],
+["Kane Williamson",82,"BAT"],
+["Moises Henriques",74,"BAT"],
+["Bhuvneshwar Kumar",87,"BWL"],
+["Ashish Nehra",77,"BWL"],
+["Mustafizur Rahman",80,"BWL"],
+["Karn Sharma",73,"BWL"],
+["Ben Cutting",78,"AR"],
+["Yuvraj Singh",79,"AR"],
+["Deepak Hooda",68,"AR"],
+["Naman Ojha",70,"KPR"],
+["Shreevats Goswami",64,"KPR"]
+],
+"2017":[
+["David Warner",90,"BAT"],
+["Shikhar Dhawan",85,"BAT"],
+["Kane Williamson",83,"BAT"],
+["Moises Henriques",73,"BAT"],
+["Bhuvneshwar Kumar",86,"BWL"],
+["Rashid Khan",85,"BWL"],
+["Ashish Nehra",73,"BWL"],
+["Siddarth Kaul",74,"BWL"],
+["Ben Cutting",75,"AR"],
+["Yuvraj Singh",76,"AR"],
+["Deepak Hooda",69,"AR"],
+["Naman Ojha",69,"KPR"],
+["Shreevats Goswami",64,"KPR"]
+],
+"2018":[
+["Kane Williamson",85,"BAT"],
+["Shikhar Dhawan",84,"BAT"],
+["Manish Pandey",78,"BAT"],
+["Alex Hales",75,"BAT"],
+["Bhuvneshwar Kumar",85,"BWL"],
+["Rashid Khan",89,"BWL"],
+["Siddarth Kaul",76,"BWL"],
+["Sandeep Sharma",73,"BWL"],
+["Shakib Al Hasan",78,"AR"],
+["Carlos Brathwaite",72,"AR"],
+["Deepak Hooda",70,"AR"],
+["Wriddhiman Saha",73,"KPR"],
+["Shreevats Goswami",64,"KPR"]
+],
+"2019":[
+["David Warner",89,"BAT"],
+["Kane Williamson",82,"BAT"],
+["Jonny Bairstow",85,"BAT"],
+["Manish Pandey",77,"BAT"],
+["Bhuvneshwar Kumar",83,"BWL"],
+["Rashid Khan",90,"BWL"],
+["Khaleel Ahmed",74,"BWL"],
+["Sandeep Sharma",72,"BWL"],
+["Mohammad Nabi",76,"AR"],
+["Vijay Shankar",73,"AR"],
+["Deepak Hooda",70,"AR"],
+["Jonny Bairstow",83,"KPR"],
+["Wriddhiman Saha",72,"KPR"]
+],
+"2020":[
+["David Warner",87,"BAT"],
+["Kane Williamson",83,"BAT"],
+["Jonny Bairstow",83,"BAT"],
+["Manish Pandey",76,"BAT"],
+["Bhuvneshwar Kumar",80,"BWL"],
+["Rashid Khan",91,"BWL"],
+["T Natarajan",79,"BWL"],
+["Sandeep Sharma",72,"BWL"],
+["Jason Holder",80,"AR"],
+["Mohammad Nabi",75,"AR"],
+["Vijay Shankar",71,"AR"],
+["Wriddhiman Saha",74,"KPR"],
+["Jonny Bairstow",81,"KPR"]
+],
+"2021":[
+["David Warner",82,"BAT"],
+["Kane Williamson",84,"BAT"],
+["Jonny Bairstow",81,"BAT"],
+["Manish Pandey",74,"BAT"],
+["Bhuvneshwar Kumar",78,"BWL"],
+["Rashid Khan",90,"BWL"],
+["T Natarajan",77,"BWL"],
+["Khaleel Ahmed",73,"BWL"],
+["Jason Holder",79,"AR"],
+["Mohammad Nabi",74,"AR"],
+["Abdul Samad",70,"AR"],
+["Wriddhiman Saha",73,"KPR"],
+["Shreevats Goswami",63,"KPR"]
+],
+"2022":[
+["Kane Williamson",79,"BAT"],
+["Abhishek Sharma",74,"BAT"],
+["Rahul Tripathi",80,"BAT"],
+["Aiden Markram",78,"BAT"],
+["Bhuvneshwar Kumar",79,"BWL"],
+["T Natarajan",77,"BWL"],
+["Umran Malik",76,"BWL"],
+["Marco Jansen",75,"BWL"],
+["Washington Sundar",73,"AR"],
+["Aiden Markram",76,"AR"],
+["Abdul Samad",71,"AR"],
+["Nicholas Pooran",82,"KPR"],
+["Glenn Phillips",72,"KPR"]
+],
+"2023":[
+["Heinrich Klaasen",83,"BAT"],
+["Rahul Tripathi",78,"BAT"],
+["Abhishek Sharma",77,"BAT"],
+["Aiden Markram",79,"BAT"],
+["Bhuvneshwar Kumar",77,"BWL"],
+["T Natarajan",76,"BWL"],
+["Umran Malik",74,"BWL"],
+["Marco Jansen",77,"BWL"],
+["Washington Sundar",74,"AR"],
+["Aiden Markram",77,"AR"],
+["Abdul Samad",72,"AR"],
+["Heinrich Klaasen",81,"KPR"],
+["Glenn Phillips",74,"KPR"]
+],
+"2024":[
+["Travis Head",87,"BAT"],
+["Abhishek Sharma",82,"BAT"],
+["Heinrich Klaasen",87,"BAT"],
+["Aiden Markram",77,"BAT"],
+["Pat Cummins",85,"BWL"],
+["Bhuvneshwar Kumar",76,"BWL"],
+["T Natarajan",78,"BWL"],
+["Jaydev Unadkat",72,"BWL"],
+["Washington Sundar",75,"AR"],
+["Marco Jansen",80,"AR"],
+["Nitish Reddy",74,"AR"],
+["Heinrich Klaasen",86,"KPR"],
+["Glenn Phillips",76,"KPR"]
+],
+"2025":[
+["Travis Head",86,"BAT"],
+["Abhishek Sharma",83,"BAT"],
+["Heinrich Klaasen",86,"BAT"],
+["Ishan Kishan",77,"BAT"],
+["Pat Cummins",84,"BWL"],
+["Harshal Patel",79,"BWL"],
+["Adam Zampa",78,"BWL"],
+["T Natarajan",76,"BWL"],
+["Nitish Reddy",77,"AR"],
+["Marco Jansen",81,"AR"],
+["Washington Sundar",74,"AR"],
+["Heinrich Klaasen",85,"KPR"],
+["Ishan Kishan",75,"KPR"]
+],
+"2026":[
+["Travis Head",87,"BAT"],
+["Abhishek Sharma",84,"BAT"],
+["Heinrich Klaasen",87,"BAT"],
+["Ishan Kishan",78,"BAT"],
+["Pat Cummins",85,"BWL"],
+["Harshal Patel",78,"BWL"],
+["Adam Zampa",79,"BWL"],
+["T Natarajan",75,"BWL"],
+["Nitish Reddy",79,"AR"],
+["Marco Jansen",82,"AR"],
+["Washington Sundar",75,"AR"],
+["Heinrich Klaasen",86,"KPR"],
+["Ishan Kishan",76,"KPR"]
+]
+}
+};
+const TEAMS = Object.keys(DB_RAW).sort();
+const TEAM_YEARS = {};
+TEAMS.forEach(t => { TEAM_YEARS[t] = Object.keys(DB_RAW[t]).map(Number).sort((a,b)=>a-b); });
+const ALL_YEARS = [];
+for (let y = 2008; y <= 2026; y++) ALL_YEARS.push(y);
+const ALL_PAIRS = [];
+TEAMS.forEach(t => TEAM_YEARS[t].forEach(y => ALL_PAIRS.push([t, y])));
+
+const TEAM_COLORS = {
+"Chennai Super Kings":"#f9cd05",
+"Mumbai Indians":"#004ba0",
+"Royal Challengers Bengaluru":"#d4213d",
+"Kolkata Knight Riders":"#3a225d",
+"Delhi Capitals":"#004c93",
+"Sunrisers Hyderabad":"#ff822a",
+"Punjab Kings":"#ed1b24",
+"Rajasthan Royals":"#ea1a85",
+"Gujarat Titans":"#1c1c2b",
+"Lucknow Super Giants":"#a72056"
+};
+
+const TEAM_SHORT = {
+"Chennai Super Kings":"CSK",
+"Mumbai Indians":"MI",
+"Royal Challengers Bengaluru":"RCB",
+"Kolkata Knight Riders":"KKR",
+"Delhi Capitals":"DC",
+"Sunrisers Hyderabad":"SRH",
+"Punjab Kings":"PBKS",
+"Rajasthan Royals":"RR",
+"Gujarat Titans":"GT",
+"Lucknow Super Giants":"LSG"
+};
+
+const POS_COLOR = {"BAT":"#f59e0b","BWL":"#3b82f6","AR":"#10b981","KPR":"#8b5cf6"};
+const POS_NAME = {"BAT":"Batsmen","BWL":"Bowlers","AR":"All-rounders","KPR":"Keepers"};
+
+const SLOTS = [
+  { id:"BAT", label:"Batsman", short:"BAT", emoji:"\u{1F3CF}", accepts:["BAT"] },
+  { id:"BWL", label:"Bowler", short:"BWL", emoji:"\u{1F3AF}", accepts:["BWL"] },
+  { id:"AR", label:"All-rounder", short:"AR", emoji:"\u{2B50}", accepts:["AR"] },
+  { id:"KPR", label:"Keeper", short:"KPR", emoji:"\u{1F9E4}", accepts:["KPR"] },
+  { id:"WC", label:"Wildcard", short:"WC", emoji:"\u{1F0CF}", accepts:["BAT","BWL","AR","KPR"] },
+];
+
+function ratingColor(r) { return r>=85?"#f59e0b":r>=77?"#10b981":r>=72?"#3b82f6":"#6b7280"; }
+function ratingTier(r) { return r>=85?"World Class":r>=77?"Great":r>=72?"Good":"Squad"; }
+function rand(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+function getYears(t) { return TEAM_YEARS[t] || []; }
+function getSquad(t,y) { return (DB_RAW[t]?.[y]||[]).map(([name,rating,pos])=>({name,rating,positions:pos.split(",")})); }
+
+function eligibleSlots(player, squad) {
+  return SLOTS.map((s,i)=>({s,i})).filter(({s,i})=> squad[i]===null && s.accepts.some(a=>player.positions.includes(a)));
+}
+
+function gaussRnd(m,s) { let u=0,v=0; while(!u)u=Math.random(); while(!v)v=Math.random(); return m+s*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+
+function simulate(squad) {
+  const filled = squad.filter(Boolean);
+  const ratings = filled.map(p => p.slotId==="WC" ? p.rating*1.05 : p.rating);
+  const avg = ratings.reduce((a,b)=>a+b,0)/ratings.length;
+  const min = Math.min(...ratings);
+  const penalty = min<72 ? (72-min)*0.3 : 0;
+  const score = avg - penalty + gaussRnd(0,5);
+  if(score>=94) return {label:"14-0", emoji:"\u{1F3C6}", tier:1, col:"var(--gold)", desc:"Unbeaten. Unstoppable. IPL Champions."};
+  if(score>=89) return {label:"13-1", emoji:"\u{1F948}", tier:2, col:"#94a3b8", desc:"One loss all season. So close to perfection."};
+  if(score>=85) return {label:"12-2", emoji:"\u{1F949}", tier:3, col:"#cd7f32", desc:"Dominant season. Lost the final but what a campaign."};
+  if(score>=83.5) return {label:"11-3", emoji:"\u{1F3CF}", tier:4, col:"var(--green)", desc:"Made the playoffs and gave it a real crack."};
+  if(score>=82) return {label:"10-4", emoji:"\u{1F3CF}", tier:5, col:"var(--green)", desc:"Solid squad that peaked at the right time. Top 4 finish."};
+  if(score>=81) return {label:"9-5", emoji:"\u{1F3BD}", tier:6, col:"var(--blue)", desc:"Just scraped into the playoffs. Lucky to be there."};
+  if(score>=80) return {label:"8-6", emoji:"\u{1F3BD}", tier:7, col:"var(--blue)", desc:"Missed the playoffs by a whisker. Net run rate hurt."};
+  if(score>=79) return {label:"7-7", emoji:"\u{274C}", tier:8, col:"var(--orange)", desc:"Middling season. Not bad enough to sack anyone, not good enough to celebrate."};
+  if(score>=77.5) return {label:"6-8", emoji:"\u{274C}", tier:9, col:"var(--orange)", desc:"More losses than wins. Fans are getting restless."};
+  if(score>=76) return {label:"5-9", emoji:"\u{274C}", tier:10, col:"var(--orange)", desc:"Too many gaps in the squad. A forgettable season."};
+  if(score>=74) return {label:"4-10", emoji:"\u{1F480}", tier:11, col:"var(--red)", desc:"Wooden spoon territory. Time to hit the auction hard."};
+  if(score>=71.5) return {label:"3-11", emoji:"\u{1F480}", tier:12, col:"var(--red)", desc:"Rock bottom. The franchise needs a complete rebuild."};
+  return {label:"2-12", emoji:"\u{1F480}", tier:13, col:"var(--red)", desc:"Historic disaster. Somehow won two games though."};
+}
+
+const promoHtml = '<a href="https://worldcup-0.com" target="_blank" class="promo-box"><div class="promo-title">Try <span>WorldCup-0</span></div></a>';
+
+let currentGame = null;
+
+function showStartScreen() {
+  document.getElementById('app').innerHTML = `
+    <header><h1>14-0</h1><p>Build your ultimate IPL XI</p></header>
+    <div class="how-to-play">
+      <h3>How to Play</h3>
+      <ol>
+        <li><strong>5 spins</strong> give you a random IPL team + season</li>
+        <li>Pick any <strong>player from that squad</strong> to fill a position</li>
+        <li>Positions: <strong>BAT \u{00B7} BWL \u{00B7} AR \u{00B7} KPR \u{00B7} Wildcard</strong></li>
+        <li>Higher ratings = <strong>better squad result</strong></li>
+        <li><strong>1 free respin</strong> each for team + year per game</li>
+        <li>Your squad is simulated \u{2014} <strong>can you win the IPL?</strong></li>
+      </ol>
+    </div>
+    <button class="btn-start" onclick="startGame()">Start Game</button>
+    <div style="text-align:center;margin-top:12px;font-size:0.7rem;color:var(--muted)">${TEAMS.length} franchises \u{00B7} 2008\u{2013}2026</div>
+    <div style="text-align:center;margin-top:24px;font-size:0.65rem"><a href="privacy.html" style="color:var(--muted);text-decoration:none">Privacy Policy</a></div>
+  `;
+  twemoji.parse(document.getElementById('app'));
+}
+
+function startGame() {
+  currentGame = {
+    squad: Array(5).fill(null),
+    team: null, year: null,
+    displayTeam: '', displayYear: '',
+    spinning: false, feedback: null,
+    picked: null, respinTeamUsed: false, respinYearUsed: false, finished: false,
+  };
+  doSpin();
+}
+
+function doSpin(lockT, lockY) {
+  const g = currentGame;
+  g.spinning = true;
+  g.picked = null;
+
+  let finalT, finalY;
+  if (lockT && lockY) { finalT = lockT; finalY = lockY; }
+  else if (lockT) { finalT = lockT; finalY = rand(getYears(lockT)); }
+  else if (lockY) { const opts = ALL_PAIRS.filter(p => p[1] === lockY); const pick = rand(opts); finalT = pick[0]; finalY = pick[1]; }
+  else { const pick = rand(ALL_PAIRS); finalT = pick[0]; finalY = pick[1]; }
+
+  let ticks = 0;
+  const maxTicks = 14;
+
+  function tick() {
+    ticks++;
+    g.displayTeam = lockT || rand(TEAMS);
+    g.displayYear = lockY || rand(ALL_YEARS);
+    renderGame();
+    if (ticks < maxTicks) {
+      setTimeout(tick, 50 + ticks * 18);
+    } else {
+      g.displayTeam = finalT;
+      g.displayYear = finalY;
+      g.team = finalT;
+      g.year = finalY;
+      g.spinning = false;
+      renderGame();
+    }
+  }
+  tick();
+}
+
+function selectPlayer(idx) {
+  const g = currentGame;
+  if (g.spinning || g.finished) return;
+  const squad = getSquad(g.team, g.year);
+  const player = squad[idx];
+  const elig = eligibleSlots(player, g.squad);
+  if (elig.length === 0) return;
+  if (elig.length === 1) { assignToSlot(player, elig[0].i); }
+  else { g.picked = { player, eligible: elig }; renderGame(); }
+}
+
+function assignToSlot(player, slotIdx) {
+  const g = currentGame;
+  g.squad[slotIdx] = { ...player, slotId: SLOTS[slotIdx].id, team: g.team, year: g.year };
+  g.picked = null;
+  g.feedback = { name: player.name, slot: SLOTS[slotIdx].label, rating: player.rating };
+
+  const pickCount = g.squad.filter(Boolean).length;
+  if (pickCount >= 5) {
+    g.finished = true;
+    renderGame();
+  } else {
+    renderGame();
+    setTimeout(() => doSpin(), 1500);
+  }
+}
+
+function cancelPick() { currentGame.picked = null; renderGame(); }
+
+function assignPickedToSlot(slotIdx) {
+  if (currentGame.picked) assignToSlot(currentGame.picked.player, slotIdx);
+}
+
+function respinTeam() {
+  const g = currentGame;
+  g.respinTeamUsed = true;
+  doSpin(null, g.year);
+}
+function respinYear() {
+  const g = currentGame;
+  g.respinYearUsed = true;
+  doSpin(g.team, null);
+}
+
+function restartGame() { startGame(); }
+
+function renderGame() {
+  const g = currentGame;
+  const pickCount = g.squad.filter(Boolean).length;
+  let html = '';
+
+  html += '<header><h1>14-0</h1><p>Build your ultimate IPL XI</p></header>';
+
+  html += '<div class="score-bar"><div class="score-section"><div class="score-label">Pick</div><div class="score-value ' + (pickCount>=5?'good':'') + '">' + Math.min(pickCount+1,5) + '/5</div></div><div class="progress-dots">';
+  SLOTS.forEach((_, i) => {
+    html += '<div class="dot ' + (g.squad[i]?'done':'') + ' ' + (i===pickCount&&!g.finished?'active':'') + '"></div>';
+  });
+  html += '</div><div class="score-section"><div class="score-label">Slots</div><div class="score-value">' + (5-pickCount) + '</div></div></div>';
+
+  if (g.feedback && !g.finished) {
+    html += '<div class="feedback-bar">' + g.feedback.name + ' \u{2192} ' + g.feedback.slot + ': <span class="fb-rank" style="color:' + ratingColor(g.feedback.rating) + '">' + ratingTier(g.feedback.rating) + '</span></div>';
+  }
+
+  if (!g.finished) {
+    const teamColor = TEAM_COLORS[g.displayTeam] || 'var(--accent)';
+    const teamShort = TEAM_SHORT[g.displayTeam] || '';
+    const squadSize = (!g.spinning && g.team) ? getSquad(g.team, g.year).length : 0;
+    html += '<div class="country-card ' + (g.spinning?'spinning':'') + '" style="border-color:' + (g.spinning?'var(--gold)':teamColor) + '"><div class="flag" style="font-size:2rem;font-weight:900;color:' + teamColor + '">' + teamShort + '</div><div class="country-name">' + (g.displayTeam||'…') + '</div><div class="year-label" style="color:' + teamColor + '">' + (g.displayYear||'…') + '</div>';
+    if (!g.spinning && squadSize) html += '<div class="squad-count">' + squadSize + ' players available</div>';
+    html += '</div>';
+  }
+
+  if (g.picked) {
+    html += '<div class="slot-choice"><div class="slot-choice-title">' + g.picked.player.name + ' can play multiple positions:</div><div class="slot-btns">';
+    g.picked.eligible.forEach(({s,i}) => {
+      html += '<button class="slot-btn" onclick="assignPickedToSlot(' + i + ')" style="border-color:' + (POS_COLOR[s.id]||'var(--border)') + '">' + s.emoji + ' ' + s.label + '</button>';
+    });
+    html += '<button class="slot-btn" onclick="cancelPick()">Cancel</button></div></div>';
+  }
+
+  if (!g.spinning && !g.finished && g.team && !g.picked) {
+    const squad = getSquad(g.team, g.year);
+    ["BAT","BWL","AR","KPR"].forEach(pos => {
+      const group = squad.map((p,idx)=>({...p,idx})).filter(p => p.positions.includes(pos));
+      if (!group.length) return;
+      html += '<div class="pos-group"><div class="pos-header" style="color:' + POS_COLOR[pos] + '">' + POS_NAME[pos] + '</div>';
+      group.forEach(p => {
+        const elig = eligibleSlots(p, g.squad);
+        const playable = elig.length > 0;
+        html += '<div class="pick-row ' + (playable?'':'disabled') + '" onclick="' + (playable?'selectPlayer('+p.idx+')':'') + '"><div class="pr-rating" style="color:' + ratingColor(p.rating) + '">' + ratingTier(p.rating) + '</div><div class="pr-name">' + p.name + (p.positions.length>1?' <span style="font-size:0.6rem;color:var(--muted);font-weight:600">(' + p.positions.join('/') + ')</span>':'') + '</div><div class="pr-pos" style="background:' + POS_COLOR[pos] + '">' + pos + '</div></div>';
+      });
+      html += '</div>';
+    });
+  }
+
+  if (!g.spinning && !g.finished && !g.picked && g.team) {
+    html += '<div class="respin-row"><button class="respin-btn" onclick="respinTeam()"' + (g.respinTeamUsed?' disabled':'') + '>\u{1F504} Respin Team</button><button class="respin-btn" onclick="respinYear()"' + (g.respinYearUsed?' disabled':'') + '>\u{1F4C5} Respin Year</button></div>';
+    html += '<button class="btn-restart" onclick="restartGame()">Restart</button>';
+    html += promoHtml;
+  }
+
+  if (pickCount > 0 || g.finished) {
+    html += '<div class="squad-slots"><div class="slots-title">Your XI</div>';
+    SLOTS.forEach((slot, i) => {
+      const p = g.squad[i];
+      html += '<div class="slot-row ' + (p?'':'empty') + '"><div class="sr-emoji">' + slot.emoji + '</div><div class="sr-label">' + slot.short + '</div><div class="sr-info">';
+      if (p) {
+        html += '<div class="sr-name">' + p.name + '</div><div class="sr-meta">' + (TEAM_SHORT[p.team]||'') + ' \u{00B7} ' + p.year + '</div>';
+      } else {
+        html += '<div class="sr-name" style="color:var(--muted)">Empty</div>';
+      }
+      html += '</div>';
+      if (p) html += '<div class="sr-rating" style="color:' + ratingColor(p.rating) + '">' + ratingTier(p.rating) + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  if (g.finished) {
+    const result = simulate(g.squad);
+    html += '<div class="final-screen"><div class="final-emoji">' + result.emoji + '</div><h2 style="color:' + result.col + '">' + result.label + '</h2><div class="final-desc">' + result.desc + '</div>';
+    html += '<button class="btn-primary" onclick="startGame()">Play Again</button>' + promoHtml + '</div>';
+  }
+
+  document.getElementById('app').innerHTML = html;
+  twemoji.parse(document.getElementById('app'));
+}
+
+showStartScreen();
+</script>
+</body>
+</html>
