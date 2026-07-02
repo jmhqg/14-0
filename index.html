@@ -92,7 +92,7 @@
   .promo-box { display: block; width: 100%; max-width: 320px; margin: 16px auto 0; padding: 14px; border-radius: 14px; background: var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; text-decoration: none; transition: all 0.15s; }
   .promo-box:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
   .promo-box .promo-title { font-size: 0.95rem; font-weight: 700; color: var(--text); }
-  .promo-box .promo-title span { color: #15803d; }
+  .promo-box .promo-title span { color: #e65100; }
 
   .how-to-play { background: var(--surface); border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px; }
   .how-to-play h3 { color: var(--accent); margin-bottom: 10px; font-size: 0.95rem; }
@@ -102,6 +102,12 @@
   .footer { text-align: center; padding: 20px 0; color: var(--muted); font-size: 0.75rem; }
   .footer a { color: var(--accent); text-decoration: none; }
 
+  .lang-toggle { display: flex; justify-content: flex-end; margin-bottom: -8px; }
+  .lang-toggle button { padding: 4px 10px; border: 2px solid var(--border); background: transparent; color: var(--muted); font-size: 0.7rem; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s; }
+  .lang-toggle button:first-child { border-radius: 8px 0 0 8px; border-right: none; }
+  .lang-toggle button:last-child { border-radius: 0 8px 8px 0; }
+  .lang-toggle button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
   .loading { text-align: center; padding: 60px 20px; color: var(--muted); }
   .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -109,9 +115,137 @@
 <script src="https://unpkg.com/twemoji@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
+<div id="lang-bar" style="max-width:480px;margin:0 auto;padding:16px 16px 0">
+  <div class="lang-toggle">
+    <button id="lang-en" class="active" onclick="setLang('en')">EN</button>
+    <button id="lang-hi" onclick="setLang('hi')">HI</button>
+  </div>
+</div>
 <div id="app"><div class="loading"><div class="spinner"></div>Loading...</div></div>
-<div class="footer">Squad data from IPL history</div>
+<div class="footer" id="footer"></div>
 <script>
+var currentLang = localStorage.getItem('14-0-lang') || 'en';
+
+var STRINGS = {
+  en: {
+    subtitle: "Build your ultimate IPL XI",
+    howToPlay: "How to Play",
+    htp1: "<strong>5 spins</strong> give you a random IPL team + season",
+    htp2: "Pick any <strong>player from that squad</strong> to fill a position",
+    htp3: "Positions: <strong>BAT \u{00B7} BWL \u{00B7} AR \u{00B7} KPR \u{00B7} Wildcard</strong>",
+    htp4: "Higher ratings = <strong>better squad result</strong>",
+    htp5: "<strong>1 free respin</strong> each for team + year per game",
+    htp6: "Your squad is simulated \u{2014} <strong>can you win the IPL?</strong>",
+    startGame: "Start Game",
+    playAgain: "Play Again",
+    restart: "Restart",
+    pick: "Pick",
+    slots: "Slots",
+    respinTeam: "Respin Team",
+    respinYear: "Respin Year",
+    playersAvail: "players available",
+    yourXI: "Your XI",
+    empty: "Empty",
+    cancel: "Cancel",
+    canPlayMulti: "can play multiple positions:",
+    privacy: "Privacy Policy",
+    footer: "Squad data from IPL history",
+    franchises: "franchises",
+    batsmen: "Batsmen",
+    bowlers: "Bowlers",
+    allRounders: "All-rounders",
+    keepers: "Keepers",
+    batsman: "Batsman",
+    bowler: "Bowler",
+    allRounder: "All-rounder",
+    keeper: "Keeper",
+    wildcard: "Wildcard",
+    worldClass: "World Class",
+    great: "Great",
+    good: "Good",
+    squad: "Squad",
+    r14_0: "Unbeaten. Unstoppable. IPL Champions.",
+    r13_1: "One loss all season. So close to perfection.",
+    r12_2: "Dominant season. Lost the final but what a campaign.",
+    r11_3: "Made the playoffs and gave it a real crack.",
+    r10_4: "Solid squad that peaked at the right time. Top 4 finish.",
+    r9_5: "Just scraped into the playoffs. Lucky to be there.",
+    r8_6: "Missed the playoffs by a whisker. Net run rate hurt.",
+    r7_7: "Middling season. Not bad enough to sack anyone, not good enough to celebrate.",
+    r6_8: "More losses than wins. Fans are getting restless.",
+    r5_9: "Too many gaps in the squad. A forgettable season.",
+    r4_10: "Wooden spoon territory. Time to hit the auction hard.",
+    r3_11: "Rock bottom. The franchise needs a complete rebuild.",
+    r2_12: "Historic disaster. Somehow won two games though.",
+  },
+  hi: {
+    subtitle: "‡§Ö‡§™‡§®‡•Ä ‡§Ü‡§à‡§™‡•Ä‡§è‡§≤ XI ‡§¨‡§®‡§æ‡§ì",
+    howToPlay: "‡§ï‡•à‡§∏‡•á ‡§ñ‡•á‡§≤‡•á‡§Ç",
+    htp1: "<strong>5 ‡§∏‡•ç‡§™‡§ø‡§®</strong> ‡§∏‡•á ‡§∞‡•à‡§Ç‡§°‡§Æ ‡§Ü‡§à‡§™‡•Ä‡§è‡§≤ ‡§ü‡•Ä‡§Æ + ‡§∏‡•Ä‡§ú‡§® ‡§Æ‡§ø‡§≤‡•á‡§ó‡§æ",
+    htp2: "‡§â‡§∏ ‡§∏‡•ç‡§ï‡•ç‡§µ‡•â‡§° ‡§∏‡•á <strong>‡§ï‡•ã‡§à ‡§≠‡•Ä ‡§ñ‡§ø‡§≤‡§æ‡§°‡§º‡•Ä ‡§ö‡•Å‡§®‡•á‡§Ç</strong>",
+    htp3: "‡§™‡•ã‡§ú‡§ø‡§∂‡§®: <strong>BAT \u{00B7} BWL \u{00B7} AR \u{00B7} KPR \u{00B7} Wildcard</strong>",
+    htp4: "‡§π‡§æ‡§à ‡§∞‡•á‡§ü‡§ø‡§Ç‡§ó = <strong>‡§¨‡•á‡§π‡§§‡§∞ ‡§®‡§§‡•Ä‡§ú‡§æ</strong>",
+    htp5: "‡§™‡•ç‡§∞‡§§‡§ø ‡§ó‡•á‡§Æ <strong>‡§ü‡•Ä‡§Æ + ‡§∏‡§æ‡§≤ ‡§ï‡•á ‡§≤‡§ø‡§è 1 ‡§´‡•ç‡§∞‡•Ä ‡§∞‡•Ä‡§∏‡•ç‡§™‡§ø‡§®</strong>",
+    htp6: "‡§Ü‡§™‡§ï‡•Ä ‡§∏‡•ç‡§ï‡•ç‡§µ‡•â‡§° ‡§∏‡§ø‡§Æ‡•Å‡§≤‡•á‡§ü ‡§π‡•ã‡§ó‡•Ä \u{2014} <strong>‡§ï‡•ç‡§Ø‡§æ ‡§Ü‡§™ IPL ‡§ú‡•Ä‡§§ ‡§∏‡§ï‡§§‡•á ‡§π‡•à‡§Ç?</strong>",
+    startGame: "‡§ñ‡•á‡§≤ ‡§∂‡•Å‡§∞‡•Ç ‡§ï‡§∞‡•á‡§Ç",
+    playAgain: "‡§´‡§ø‡§∞ ‡§∏‡•á ‡§ñ‡•á‡§≤‡•á‡§Ç",
+    restart: "‡§¶‡•ã‡§¨‡§æ‡§∞‡§æ ‡§∂‡•Å‡§∞‡•Ç ‡§ï‡§∞‡•á‡§Ç",
+    pick: "‡§™‡§ø‡§ï",
+    slots: "‡§∏‡•ç‡§≤‡•â‡§ü",
+    respinTeam: "‡§ü‡•Ä‡§Æ ‡§¨‡§¶‡§≤‡•á‡§Ç",
+    respinYear: "‡§∏‡§æ‡§≤ ‡§¨‡§¶‡§≤‡•á‡§Ç",
+    playersAvail: "‡§ñ‡§ø‡§≤‡§æ‡§°‡§º‡•Ä ‡§â‡§™‡§≤‡§¨‡•ç‡§ß",
+    yourXI: "‡§Ü‡§™‡§ï‡•Ä XI",
+    empty: "‡§ñ‡§æ‡§≤‡•Ä",
+    cancel: "‡§∞‡§¶‡•ç‡§¶ ‡§ï‡§∞‡•á‡§Ç",
+    canPlayMulti: "‡§ï‡§à ‡§™‡•ã‡§ú‡§ø‡§∂‡§® ‡§Æ‡•á‡§Ç ‡§ñ‡•á‡§≤ ‡§∏‡§ï‡§§‡§æ ‡§π‡•à:",
+    privacy: "‡§ó‡•ã‡§™‡§®‡•Ä‡§Ø‡§§‡§æ ‡§®‡•Ä‡§§‡§ø",
+    footer: "‡§Ü‡§à‡§™‡•Ä‡§è‡§≤ ‡§á‡§§‡§ø‡§π‡§æ‡§∏ ‡§∏‡•á ‡§∏‡•ç‡§ï‡•ç‡§µ‡•â‡§° ‡§°‡•á‡§ü‡§æ",
+    franchises: "‡§´‡•ç‡§∞‡•à‡§Ç‡§ö‡§æ‡§á‡§ú‡§º‡•Ä",
+    batsmen: "‡§¨‡•à‡§ü‡•ç‡§∏‡§Æ‡•á‡§®",
+    bowlers: "‡§ó‡•á‡§Ç‡§¶‡§¨‡§æ‡§ú‡§º",
+    allRounders: "‡§ë‡§≤‡§∞‡§æ‡§â‡§Ç‡§°‡§∞",
+    keepers: "‡§ï‡•Ä‡§™‡§∞",
+    batsman: "‡§¨‡•à‡§ü‡•ç‡§∏‡§Æ‡•à‡§®",
+    bowler: "‡§ó‡•á‡§Ç‡§¶‡§¨‡§æ‡§ú‡§º",
+    allRounder: "‡§ë‡§≤‡§∞‡§æ‡§â‡§Ç‡§°‡§∞",
+    keeper: "‡§ï‡•Ä‡§™‡§∞",
+    wildcard: "‡§µ‡§æ‡§á‡§≤‡•ç‡§°‡§ï‡§æ‡§∞‡•ç‡§°",
+    worldClass: "World Class",
+    great: "Great",
+    good: "Good",
+    squad: "Squad",
+    r14_0: "‡§Ö‡§™‡§∞‡§æ‡§ú‡§ø‡§§‡•§ ‡§Ö‡§ú‡•á‡§Ø‡•§ IPL ‡§ö‡•à‡§Ç‡§™‡§ø‡§Ø‡§®‡•ç‡§∏‡•§",
+    r13_1: "‡§™‡•Ç‡§∞‡•á ‡§∏‡•Ä‡§ú‡§® ‡§Æ‡•á‡§Ç ‡§∏‡§ø‡§∞‡•ç‡§´ ‡§è‡§ï ‡§π‡§æ‡§∞‡•§ ‡§™‡§∞‡•ç‡§´‡•á‡§ï‡•ç‡§∂‡§® ‡§∏‡•á ‡§¨‡§∏ ‡§ú‡§º‡§∞‡§æ ‡§¶‡•Ç‡§∞‡•§",
+    r12_2: "‡§∂‡§æ‡§®‡§¶‡§æ‡§∞ ‡§∏‡•Ä‡§ú‡§®‡•§ ‡§´‡§æ‡§á‡§®‡§≤ ‡§π‡§æ‡§∞‡•á ‡§≤‡•á‡§ï‡§ø‡§® ‡§ï‡•ç‡§Ø‡§æ ‡§∏‡§´‡§º‡§∞ ‡§∞‡§π‡§æ‡•§",
+    r11_3: "‡§™‡•ç‡§≤‡•á‡§ë‡§´ ‡§Æ‡•á‡§Ç ‡§™‡§π‡•Å‡§Å‡§ö‡•á ‡§î‡§∞ ‡§Ö‡§ö‡•ç‡§õ‡§æ ‡§ñ‡•á‡§≤‡•á‡•§",
+    r10_4: "‡§∏‡§π‡•Ä ‡§µ‡§ï‡•ç‡§§ ‡§™‡§∞ ‡§ö‡§∞‡§Æ ‡§™‡§∞ ‡§™‡§π‡•Å‡§Å‡§ö‡•Ä ‡§ü‡•Ä‡§Æ‡•§ ‡§ü‡•â‡§™ 4 ‡§´‡§ø‡§®‡§ø‡§∂‡•§",
+    r9_5: "‡§¨‡§°‡§º‡•Ä ‡§Æ‡•Å‡§∂‡•ç‡§ï‡§ø‡§≤ ‡§∏‡•á ‡§™‡•ç‡§≤‡•á‡§ë‡§´ ‡§Æ‡•á‡§Ç ‡§™‡§π‡•Å‡§Å‡§ö‡•á‡•§ ‡§ï‡§ø‡§∏‡•ç‡§Æ‡§§ ‡§Ö‡§ö‡•ç‡§õ‡•Ä ‡§∞‡§π‡•Ä‡•§",
+    r8_6: "‡§¨‡§æ‡§≤-‡§¨‡§æ‡§≤ ‡§™‡•ç‡§≤‡•á‡§ë‡§´ ‡§∏‡•á ‡§ö‡•Ç‡§ï‡•á‡•§ ‡§®‡•á‡§ü ‡§∞‡§® ‡§∞‡•á‡§ü ‡§®‡•á ‡§ß‡•ã‡§ñ‡§æ ‡§¶‡§ø‡§Ø‡§æ‡•§",
+    r7_7: "‡§î‡§∏‡§§ ‡§∏‡•Ä‡§ú‡§®‡•§ ‡§® ‡§¨‡•Å‡§∞‡§æ ‡§® ‡§Ö‡§ö‡•ç‡§õ‡§æ‡•§",
+    r6_8: "‡§ú‡•Ä‡§§ ‡§∏‡•á ‡§ú‡•ç‡§Ø‡§æ‡§¶‡§æ ‡§π‡§æ‡§∞‡•§ ‡§´‡•à‡§Ç‡§∏ ‡§¨‡•á‡§ö‡•à‡§® ‡§π‡•ã ‡§∞‡§π‡•á ‡§π‡•à‡§Ç‡•§",
+    r5_9: "‡§∏‡•ç‡§ï‡•ç‡§µ‡•â‡§° ‡§Æ‡•á‡§Ç ‡§¨‡§π‡•Å‡§§ ‡§ï‡§Æ‡§ø‡§Ø‡§æ‡§Å‡•§ ‡§≠‡•Å‡§≤‡§®‡•á ‡§≤‡§æ‡§Ø‡§ï ‡§∏‡•Ä‡§ú‡§®‡•§",
+    r4_10: "‡§µ‡•Å‡§°‡§® ‡§∏‡•ç‡§™‡•Ç‡§®‡•§ ‡§®‡•Ä‡§≤‡§æ‡§Æ‡•Ä ‡§Æ‡•á‡§Ç ‡§™‡•à‡§∏‡§æ ‡§≤‡§ó‡§æ‡§®‡•á ‡§ï‡§æ ‡§µ‡§ï‡•ç‡§§‡•§",
+    r3_11: "‡§∏‡§¨‡§∏‡•á ‡§®‡•Ä‡§ö‡•á‡•§ ‡§™‡•Ç‡§∞‡•Ä ‡§§‡§∞‡§π ‡§∏‡•á ‡§®‡§è ‡§∏‡§ø‡§∞‡•á ‡§∏‡•á ‡§¨‡§®‡§æ‡§®‡§æ ‡§π‡•ã‡§ó‡§æ‡•§",
+    r2_12: "‡§ê‡§§‡§ø‡§π‡§æ‡§∏‡§ø‡§ï ‡§§‡§¨‡§æ‡§π‡•Ä‡•§ ‡§´‡§ø‡§∞ ‡§≠‡•Ä ‡§¶‡•ã ‡§Æ‡•à‡§ö ‡§ú‡•Ä‡§§‡•á‡•§",
+  }
+};
+
+function t(key) { return STRINGS[currentLang][key] || STRINGS.en[key] || key; }
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('14-0-lang', lang);
+  updateChrome();
+  if (currentGame) { renderGame(); } else { showStartScreen(); }
+}
+
+function updateChrome() {
+  document.getElementById('lang-en').className = currentLang === 'en' ? 'active' : '';
+  document.getElementById('lang-hi').className = currentLang === 'hi' ? 'active' : '';
+  document.getElementById('footer').textContent = t('footer');
+}
+
 const DB_RAW = {
 "Chennai Super Kings":{
 "2008":[
@@ -2524,18 +2658,19 @@ const TEAM_SHORT = {
 };
 
 const POS_COLOR = {"BAT":"#f59e0b","BWL":"#3b82f6","AR":"#10b981","KPR":"#8b5cf6"};
-const POS_NAME = {"BAT":"Batsmen","BWL":"Bowlers","AR":"All-rounders","KPR":"Keepers"};
+function posGroupName(pos) { return t({BAT:"batsmen",BWL:"bowlers",AR:"allRounders",KPR:"keepers"}[pos]||pos); }
+function slotLabel(id) { return t({BAT:"batsman",BWL:"bowler",AR:"allRounder",KPR:"keeper",WC:"wildcard"}[id]||id); }
 
 const SLOTS = [
-  { id:"BAT", label:"Batsman", short:"BAT", emoji:"\u{1F3CF}", accepts:["BAT"] },
-  { id:"BWL", label:"Bowler", short:"BWL", emoji:"\u{1F3AF}", accepts:["BWL"] },
-  { id:"AR", label:"All-rounder", short:"AR", emoji:"\u{2B50}", accepts:["AR"] },
-  { id:"KPR", label:"Keeper", short:"KPR", emoji:"\u{1F9E4}", accepts:["KPR"] },
-  { id:"WC", label:"Wildcard", short:"WC", emoji:"\u{1F0CF}", accepts:["BAT","BWL","AR","KPR"] },
+  { id:"BAT", short:"BAT", emoji:"\u{1F3CF}", accepts:["BAT"] },
+  { id:"BWL", short:"BWL", emoji:"\u{1F3AF}", accepts:["BWL"] },
+  { id:"AR", short:"AR", emoji:"\u{2B50}", accepts:["AR"] },
+  { id:"KPR", short:"KPR", emoji:"\u{1F9E4}", accepts:["KPR"] },
+  { id:"WC", short:"WC", emoji:"\u{1F0CF}", accepts:["BAT","BWL","AR","KPR"] },
 ];
 
 function ratingColor(r) { return r>=85?"#f59e0b":r>=77?"#10b981":r>=72?"#3b82f6":"#6b7280"; }
-function ratingTier(r) { return r>=85?"World Class":r>=77?"Great":r>=72?"Good":"Squad"; }
+function ratingTier(r) { return r>=85?t("worldClass"):r>=77?t("great"):r>=72?t("good"):t("squad"); }
 function rand(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
 function getYears(t) { return TEAM_YEARS[t] || []; }
 function getSquad(t,y) { return (DB_RAW[t]?.[y]||[]).map(([name,rating,pos])=>({name,rating,positions:pos.split(",")})); }
@@ -2553,43 +2688,42 @@ function simulate(squad) {
   const min = Math.min(...ratings);
   const penalty = min<72 ? (72-min)*0.3 : 0;
   const score = avg - penalty + gaussRnd(0,5);
-  if(score>=94) return {label:"14-0", emoji:"\u{1F3C6}", tier:1, col:"var(--gold)", desc:"Unbeaten. Unstoppable. IPL Champions."};
-  if(score>=89) return {label:"13-1", emoji:"\u{1F948}", tier:2, col:"#94a3b8", desc:"One loss all season. So close to perfection."};
-  if(score>=85) return {label:"12-2", emoji:"\u{1F949}", tier:3, col:"#cd7f32", desc:"Dominant season. Lost the final but what a campaign."};
-  if(score>=83.5) return {label:"11-3", emoji:"\u{1F3CF}", tier:4, col:"var(--green)", desc:"Made the playoffs and gave it a real crack."};
-  if(score>=82) return {label:"10-4", emoji:"\u{1F3CF}", tier:5, col:"var(--green)", desc:"Solid squad that peaked at the right time. Top 4 finish."};
-  if(score>=81) return {label:"9-5", emoji:"\u{1F3BD}", tier:6, col:"var(--blue)", desc:"Just scraped into the playoffs. Lucky to be there."};
-  if(score>=80) return {label:"8-6", emoji:"\u{1F3BD}", tier:7, col:"var(--blue)", desc:"Missed the playoffs by a whisker. Net run rate hurt."};
-  if(score>=79) return {label:"7-7", emoji:"\u{274C}", tier:8, col:"var(--orange)", desc:"Middling season. Not bad enough to sack anyone, not good enough to celebrate."};
-  if(score>=77.5) return {label:"6-8", emoji:"\u{274C}", tier:9, col:"var(--orange)", desc:"More losses than wins. Fans are getting restless."};
-  if(score>=76) return {label:"5-9", emoji:"\u{274C}", tier:10, col:"var(--orange)", desc:"Too many gaps in the squad. A forgettable season."};
-  if(score>=74) return {label:"4-10", emoji:"\u{1F480}", tier:11, col:"var(--red)", desc:"Wooden spoon territory. Time to hit the auction hard."};
-  if(score>=71.5) return {label:"3-11", emoji:"\u{1F480}", tier:12, col:"var(--red)", desc:"Rock bottom. The franchise needs a complete rebuild."};
-  return {label:"2-12", emoji:"\u{1F480}", tier:13, col:"var(--red)", desc:"Historic disaster. Somehow won two games though."};
+  if(score>=94) return {label:"14-0", emoji:"\u{1F3C6}", tier:1, col:"var(--gold)", desc:t("r14_0")};
+  if(score>=89) return {label:"13-1", emoji:"\u{1F948}", tier:2, col:"#94a3b8", desc:t("r13_1")};
+  if(score>=85) return {label:"12-2", emoji:"\u{1F949}", tier:3, col:"#cd7f32", desc:t("r12_2")};
+  if(score>=83.5) return {label:"11-3", emoji:"\u{1F3CF}", tier:4, col:"var(--green)", desc:t("r11_3")};
+  if(score>=82) return {label:"10-4", emoji:"\u{1F3CF}", tier:5, col:"var(--green)", desc:t("r10_4")};
+  if(score>=81) return {label:"9-5", emoji:"\u{1F3BD}", tier:6, col:"var(--blue)", desc:t("r9_5")};
+  if(score>=80) return {label:"8-6", emoji:"\u{1F3BD}", tier:7, col:"var(--blue)", desc:t("r8_6")};
+  if(score>=79) return {label:"7-7", emoji:"\u{274C}", tier:8, col:"var(--orange)", desc:t("r7_7")};
+  if(score>=77.5) return {label:"6-8", emoji:"\u{274C}", tier:9, col:"var(--orange)", desc:t("r6_8")};
+  if(score>=76) return {label:"5-9", emoji:"\u{274C}", tier:10, col:"var(--orange)", desc:t("r5_9")};
+  if(score>=74) return {label:"4-10", emoji:"\u{1F480}", tier:11, col:"var(--red)", desc:t("r4_10")};
+  if(score>=71.5) return {label:"3-11", emoji:"\u{1F480}", tier:12, col:"var(--red)", desc:t("r3_11")};
+  return {label:"2-12", emoji:"\u{1F480}", tier:13, col:"var(--red)", desc:t("r2_12")};
 }
 
-const promoHtml = '<a href="https://worldcup-0.com" target="_blank" class="promo-box"><div class="promo-title">Try <span>WorldCup-0</span></div></a>';
+const promoHtml = '<a href="https://winkohli.com" target="_blank" class="promo-box"><div class="promo-title">Try <span>WinKohli</span></div></a>';
 
 let currentGame = null;
 
 function showStartScreen() {
-  document.getElementById('app').innerHTML = `
-    <header><h1>14-0</h1><p>Build your ultimate IPL XI</p></header>
-    <div class="how-to-play">
-      <h3>How to Play</h3>
-      <ol>
-        <li><strong>5 spins</strong> give you a random IPL team + season</li>
-        <li>Pick any <strong>player from that squad</strong> to fill a position</li>
-        <li>Positions: <strong>BAT \u{00B7} BWL \u{00B7} AR \u{00B7} KPR \u{00B7} Wildcard</strong></li>
-        <li>Higher ratings = <strong>better squad result</strong></li>
-        <li><strong>1 free respin</strong> each for team + year per game</li>
-        <li>Your squad is simulated \u{2014} <strong>can you win the IPL?</strong></li>
-      </ol>
-    </div>
-    <button class="btn-start" onclick="startGame()">Start Game</button>
-    <div style="text-align:center;margin-top:12px;font-size:0.7rem;color:var(--muted)">${TEAMS.length} franchises \u{00B7} 2008\u{2013}2026</div>
-    <div style="text-align:center;margin-top:24px;font-size:0.65rem"><a href="privacy.html" style="color:var(--muted);text-decoration:none">Privacy Policy</a></div>
-  `;
+  document.getElementById('app').innerHTML =
+    '<header><h1>14-0</h1><p>' + t('subtitle') + '</p></header>' +
+    '<div class="how-to-play">' +
+      '<h3>' + t('howToPlay') + '</h3>' +
+      '<ol>' +
+        '<li>' + t('htp1') + '</li>' +
+        '<li>' + t('htp2') + '</li>' +
+        '<li>' + t('htp3') + '</li>' +
+        '<li>' + t('htp4') + '</li>' +
+        '<li>' + t('htp5') + '</li>' +
+        '<li>' + t('htp6') + '</li>' +
+      '</ol>' +
+    '</div>' +
+    '<button class="btn-start" onclick="startGame()">' + t('startGame') + '</button>' +
+    '<div style="text-align:center;margin-top:12px;font-size:0.7rem;color:var(--muted)">' + TEAMS.length + ' ' + t('franchises') + ' \u{00B7} 2008\u{2013}2026</div>' +
+    '<div style="text-align:center;margin-top:24px;font-size:0.65rem"><a href="privacy.html" style="color:var(--muted);text-decoration:none">' + t('privacy') + '</a></div>';
   twemoji.parse(document.getElementById('app'));
 }
 
@@ -2652,7 +2786,7 @@ function assignToSlot(player, slotIdx) {
   const g = currentGame;
   g.squad[slotIdx] = { ...player, slotId: SLOTS[slotIdx].id, team: g.team, year: g.year };
   g.picked = null;
-  g.feedback = { name: player.name, slot: SLOTS[slotIdx].label, rating: player.rating };
+  g.feedback = { name: player.name, slotId: SLOTS[slotIdx].id, rating: player.rating };
 
   const pickCount = g.squad.filter(Boolean).length;
   if (pickCount >= 5) {
@@ -2688,33 +2822,33 @@ function renderGame() {
   const pickCount = g.squad.filter(Boolean).length;
   let html = '';
 
-  html += '<header><h1>14-0</h1><p>Build your ultimate IPL XI</p></header>';
+  html += '<header><h1>14-0</h1><p>' + t('subtitle') + '</p></header>';
 
-  html += '<div class="score-bar"><div class="score-section"><div class="score-label">Pick</div><div class="score-value ' + (pickCount>=5?'good':'') + '">' + Math.min(pickCount+1,5) + '/5</div></div><div class="progress-dots">';
+  html += '<div class="score-bar"><div class="score-section"><div class="score-label">' + t('pick') + '</div><div class="score-value ' + (pickCount>=5?'good':'') + '">' + Math.min(pickCount+1,5) + '/5</div></div><div class="progress-dots">';
   SLOTS.forEach((_, i) => {
     html += '<div class="dot ' + (g.squad[i]?'done':'') + ' ' + (i===pickCount&&!g.finished?'active':'') + '"></div>';
   });
-  html += '</div><div class="score-section"><div class="score-label">Slots</div><div class="score-value">' + (5-pickCount) + '</div></div></div>';
+  html += '</div><div class="score-section"><div class="score-label">' + t('slots') + '</div><div class="score-value">' + (5-pickCount) + '</div></div></div>';
 
   if (g.feedback && !g.finished) {
-    html += '<div class="feedback-bar">' + g.feedback.name + ' \u{2192} ' + g.feedback.slot + ': <span class="fb-rank" style="color:' + ratingColor(g.feedback.rating) + '">' + ratingTier(g.feedback.rating) + '</span></div>';
+    html += '<div class="feedback-bar">' + g.feedback.name + ' \u{2192} ' + slotLabel(g.feedback.slotId) + ': <span class="fb-rank" style="color:' + ratingColor(g.feedback.rating) + '">' + ratingTier(g.feedback.rating) + '</span></div>';
   }
 
   if (!g.finished) {
     const teamColor = TEAM_COLORS[g.displayTeam] || 'var(--accent)';
     const teamShort = TEAM_SHORT[g.displayTeam] || '';
     const squadSize = (!g.spinning && g.team) ? getSquad(g.team, g.year).length : 0;
-    html += '<div class="country-card ' + (g.spinning?'spinning':'') + '" style="border-color:' + (g.spinning?'var(--gold)':teamColor) + '"><div class="flag" style="font-size:2rem;font-weight:900;color:' + teamColor + '">' + teamShort + '</div><div class="country-name">' + (g.displayTeam||'…') + '</div><div class="year-label" style="color:' + teamColor + '">' + (g.displayYear||'…') + '</div>';
-    if (!g.spinning && squadSize) html += '<div class="squad-count">' + squadSize + ' players available</div>';
+    html += '<div class="country-card ' + (g.spinning?'spinning':'') + '" style="border-color:' + (g.spinning?'var(--gold)':teamColor) + '"><div class="flag" style="font-size:2rem;font-weight:900;color:' + teamColor + '">' + teamShort + '</div><div class="country-name">' + (g.displayTeam||'‚Ä¶') + '</div><div class="year-label" style="color:' + teamColor + '">' + (g.displayYear||'‚Ä¶') + '</div>';
+    if (!g.spinning && squadSize) html += '<div class="squad-count">' + squadSize + ' ' + t('playersAvail') + '</div>';
     html += '</div>';
   }
 
   if (g.picked) {
-    html += '<div class="slot-choice"><div class="slot-choice-title">' + g.picked.player.name + ' can play multiple positions:</div><div class="slot-btns">';
+    html += '<div class="slot-choice"><div class="slot-choice-title">' + g.picked.player.name + ' ' + t('canPlayMulti') + '</div><div class="slot-btns">';
     g.picked.eligible.forEach(({s,i}) => {
-      html += '<button class="slot-btn" onclick="assignPickedToSlot(' + i + ')" style="border-color:' + (POS_COLOR[s.id]||'var(--border)') + '">' + s.emoji + ' ' + s.label + '</button>';
+      html += '<button class="slot-btn" onclick="assignPickedToSlot(' + i + ')" style="border-color:' + (POS_COLOR[s.id]||'var(--border)') + '">' + s.emoji + ' ' + slotLabel(s.id) + '</button>';
     });
-    html += '<button class="slot-btn" onclick="cancelPick()">Cancel</button></div></div>';
+    html += '<button class="slot-btn" onclick="cancelPick()">' + t('cancel') + '</button></div></div>';
   }
 
   if (!g.spinning && !g.finished && g.team && !g.picked) {
@@ -2722,7 +2856,7 @@ function renderGame() {
     ["BAT","BWL","AR","KPR"].forEach(pos => {
       const group = squad.map((p,idx)=>({...p,idx})).filter(p => p.positions.includes(pos));
       if (!group.length) return;
-      html += '<div class="pos-group"><div class="pos-header" style="color:' + POS_COLOR[pos] + '">' + POS_NAME[pos] + '</div>';
+      html += '<div class="pos-group"><div class="pos-header" style="color:' + POS_COLOR[pos] + '">' + posGroupName(pos) + '</div>';
       group.forEach(p => {
         const elig = eligibleSlots(p, g.squad);
         const playable = elig.length > 0;
@@ -2733,20 +2867,20 @@ function renderGame() {
   }
 
   if (!g.spinning && !g.finished && !g.picked && g.team) {
-    html += '<div class="respin-row"><button class="respin-btn" onclick="respinTeam()"' + (g.respinTeamUsed?' disabled':'') + '>\u{1F504} Respin Team</button><button class="respin-btn" onclick="respinYear()"' + (g.respinYearUsed?' disabled':'') + '>\u{1F4C5} Respin Year</button></div>';
-    html += '<button class="btn-restart" onclick="restartGame()">Restart</button>';
+    html += '<div class="respin-row"><button class="respin-btn" onclick="respinTeam()"' + (g.respinTeamUsed?' disabled':'') + '>\u{1F504} ' + t('respinTeam') + '</button><button class="respin-btn" onclick="respinYear()"' + (g.respinYearUsed?' disabled':'') + '>\u{1F4C5} ' + t('respinYear') + '</button></div>';
+    html += '<button class="btn-restart" onclick="restartGame()">' + t('restart') + '</button>';
     html += promoHtml;
   }
 
   if (pickCount > 0 || g.finished) {
-    html += '<div class="squad-slots"><div class="slots-title">Your XI</div>';
+    html += '<div class="squad-slots"><div class="slots-title">' + t('yourXI') + '</div>';
     SLOTS.forEach((slot, i) => {
       const p = g.squad[i];
       html += '<div class="slot-row ' + (p?'':'empty') + '"><div class="sr-emoji">' + slot.emoji + '</div><div class="sr-label">' + slot.short + '</div><div class="sr-info">';
       if (p) {
         html += '<div class="sr-name">' + p.name + '</div><div class="sr-meta">' + (TEAM_SHORT[p.team]||'') + ' \u{00B7} ' + p.year + '</div>';
       } else {
-        html += '<div class="sr-name" style="color:var(--muted)">Empty</div>';
+        html += '<div class="sr-name" style="color:var(--muted)">' + t('empty') + '</div>';
       }
       html += '</div>';
       if (p) html += '<div class="sr-rating" style="color:' + ratingColor(p.rating) + '">' + ratingTier(p.rating) + '</div>';
@@ -2758,13 +2892,14 @@ function renderGame() {
   if (g.finished) {
     const result = simulate(g.squad);
     html += '<div class="final-screen"><div class="final-emoji">' + result.emoji + '</div><h2 style="color:' + result.col + '">' + result.label + '</h2><div class="final-desc">' + result.desc + '</div>';
-    html += '<button class="btn-primary" onclick="startGame()">Play Again</button>' + promoHtml + '</div>';
+    html += '<button class="btn-primary" onclick="startGame()">' + t('playAgain') + '</button>' + promoHtml + '</div>';
   }
 
   document.getElementById('app').innerHTML = html;
   twemoji.parse(document.getElementById('app'));
 }
 
+updateChrome();
 showStartScreen();
 </script>
 </body>
