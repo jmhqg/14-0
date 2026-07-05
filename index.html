@@ -99,6 +99,10 @@
   .how-to-play ol { padding-left: 18px; color: var(--muted); font-size: 0.85rem; line-height: 1.7; }
   .how-to-play strong { color: var(--text); }
 
+  .top-nav { text-align: center; padding: 10px 16px; background: var(--accent); }
+  .top-nav a { color: #fff; text-decoration: none; font-size: 0.8rem; font-weight: 600; }
+  .top-nav a:hover { text-decoration: underline; }
+
   .footer { text-align: center; padding: 20px 0; color: var(--muted); font-size: 0.75rem; }
   .footer a { color: var(--accent); text-decoration: none; }
 
@@ -115,6 +119,7 @@
 <script src="https://unpkg.com/twemoji@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
+<div class="top-nav"><a href="how-to-play.html">How to Play</a></div>
 <div id="lang-bar" style="max-width:480px;margin:0 auto;padding:16px 16px 0">
   <div class="lang-toggle">
     <button id="lang-en" class="active" onclick="setLang('en')">EN</button>
@@ -2708,23 +2713,7 @@ const promoHtml = '<a href="https://winkohli.com" target="_blank" class="promo-b
 let currentGame = null;
 
 function showStartScreen() {
-  document.getElementById('app').innerHTML =
-    '<header><h1>14-0</h1><p>' + t('subtitle') + '</p></header>' +
-    '<div class="how-to-play">' +
-      '<h3>' + t('howToPlay') + '</h3>' +
-      '<ol>' +
-        '<li>' + t('htp1') + '</li>' +
-        '<li>' + t('htp2') + '</li>' +
-        '<li>' + t('htp3') + '</li>' +
-        '<li>' + t('htp4') + '</li>' +
-        '<li>' + t('htp5') + '</li>' +
-        '<li>' + t('htp6') + '</li>' +
-      '</ol>' +
-    '</div>' +
-    '<button class="btn-start" onclick="startGame()">' + t('startGame') + '</button>' +
-    '<div style="text-align:center;margin-top:12px;font-size:0.7rem;color:var(--muted)">' + TEAMS.length + ' ' + t('franchises') + ' \u{00B7} 2008\u{2013}2026</div>' +
-    '<div style="text-align:center;margin-top:24px;font-size:0.65rem"><a href="privacy.html" style="color:var(--muted);text-decoration:none">' + t('privacy') + '</a></div>';
-  twemoji.parse(document.getElementById('app'));
+  startGame();
 }
 
 function startGame() {
